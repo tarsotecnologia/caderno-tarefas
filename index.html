@@ -176,9 +176,11 @@ body.locked .lapis,body.locked .balao{display:none}
 @keyframes boia{50%{transform:translateY(-5px)}}
 @keyframes mexe{20%{transform:rotate(-12deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(3deg)}}
 .balao{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 40px);bottom:calc(140px + env(safe-area-inset-bottom,0px));z-index:15;width:min(260px,calc(100vw - 60px));background:var(--paper);color:var(--ink);border:1.5px solid var(--ink-soft);border-radius:16px;padding:12px 14px 10px;font-family:var(--f-hand);font-size:22px;line-height:1.15;box-shadow:0 8px 20px rgb(0 0 0/.15)}
+.balao.entra{transform-origin:85% 100%;animation:entra .38s cubic-bezier(.2,1.5,.4,1)}
+@keyframes entra{0%{opacity:0;transform:translate(14px,24px) scale(.3) rotate(6deg)}100%{opacity:1;transform:none}}
 .balao::after{content:"";position:absolute;right:18px;bottom:-9px;width:16px;height:16px;background:var(--paper);border-right:1.5px solid var(--ink-soft);border-bottom:1.5px solid var(--ink-soft);transform:rotate(45deg)}
 .balao .esconder{display:block;margin:8px 0 0 auto;font-family:var(--f-body);font-size:12px;color:var(--ink-soft);text-decoration:underline}
-@media (prefers-reduced-motion:reduce){.lapis,.lapis.mexe{animation:none}}
+@media (prefers-reduced-motion:reduce){.lapis,.lapis.mexe,.balao.entra{animation:none}}
 
 @media (max-width:900px) and (min-width:761px){.app{grid-template-columns:200px minmax(0,1fr)}.dictbtn span{display:none}.add .when{max-width:110px}}
 /* Portrait iPad mini / phone: tabs become a scrolling strip */
@@ -856,13 +858,47 @@ const PIADAS = [
   "O que o lápis disse para o papel? Fica tranquilo, eu tô do seu lado. Na linha.",
   "Sabe qual é a tarefa mais fácil? A que já está feita.",
   "Fui apontado como o melhor lápis do app. Doeu um pouco.",
+  "Por que o livro foi ao médico? Porque estava com dor nas costas da capa.",
+  "Qual é o doce preferido do átomo? Pé de moléca-cula.",
+  "O que o café disse para o açúcar? Sem você minha vida é amarga.",
+  "Por que o pinheiro não se perde na floresta? Porque ele tem uma pinha.",
+  "O que é um ponto preto no avião? Uma aeromosca.",
+  "Qual é o carro que anda devagar e é chique? O Lentoborghini.",
+  "Por que o elefante não pega fogo? Porque ele já é cinza.",
+  "O que o canibal vegetariano come? A mão de alface.",
+  "Qual é o rei dos queijos? O reiqueijão.",
+  "Por que a galinha atravessou a rua? Para chegar no ovo lado.",
+  "O que o cavalo foi fazer no orelhão? Passar um trote.",
+  "Qual é a cidade que não tem táxi? Uberlândia. Ah, tem? Então esquece.",
+  "Como se chama um boi dormindo? Boi-cote. Tá, foi fraca.",
+  "O que é um vegetariano que come carne? Um ex-vegetariano.",
+  "Qual é o cúmulo da rapidez? Fechar a gaveta e trancar o próprio dedo antes.",
+  "Por que o computador foi preso? Porque executou um programa.",
+  "Qual é o lugar mais frio da casa? O cantinho, porque fica a 90 graus.",
+  "O que a parede disse para a outra? Te encontro na esquina.",
+  "Qual é o cereal favorito do vampiro? Aveia. A veia, entendeu?",
+  "Por que o professor de música foi preso? Porque ele tocou a campainha.",
+  "O que o pagodeiro foi fazer na igreja? Cantar pá God.",
+  "Qual é a comida que liga e desliga? O strogonoff.",
+  "Qual é o animal que não vale mais nada? O javali.",
+  "Como o Batman faz para abrir a Batcaverna? Ele bat-palma.",
+  "O que o lápis disse para o apontador? Para de me fazer de bobo, você só gira em torno de mim.",
+  "Qual é o contrário de papelada? Pá vestida.",
+  "Por que a régua não gosta de discussão? Ela prefere manter tudo na linha.",
+  "Por que o clipe é tão confiável? Porque ele segura qualquer situação.",
+  "Anotei uma piada nova. Mas apaguei, era rascunho.",
+  "Sabe o que tem na tarefa atrasada? Um prazo que ficou para trás.",
+  "Minha meta hoje: riscar tudo da lista. Inclusive a lista.",
+  "O que o calendário disse para o prazo? Seus dias estão contados.",
+  "Qual é a tarefa preferida do lápis? Fazer um ponto final.",
 ];
 const LAPIS_OFF = "cadernos-lapis-oculto";
 let ultimaPiada = -1, balaoTimer;
 function lapisVisivel(on){ $("#lapis").hidden = !on; if (!on) $("#balao").hidden = true; }
 $("#lapis").addEventListener("click", () => {
   let i; do i = Math.floor(Math.random() * PIADAS.length); while (i === ultimaPiada);
-  ultimaPiada = i; $("#piada").textContent = PIADAS[i]; $("#balao").hidden = false;
+  ultimaPiada = i; $("#piada").textContent = PIADAS[i];
+  const b = $("#balao"); b.hidden = false; b.classList.remove("entra"); void b.offsetWidth; b.classList.add("entra");
   const l = $("#lapis"); l.classList.remove("mexe"); void l.offsetWidth; l.classList.add("mexe");
   clearTimeout(balaoTimer); balaoTimer = setTimeout(() => $("#balao").hidden = true, 9000);
 });
