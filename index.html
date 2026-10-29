@@ -165,13 +165,17 @@ li.task{min-height:var(--row)}
 .toast button{color:var(--pen-wash);font-weight:600;text-decoration:underline}
 
 /* Lápis mascote: toque nele para uma piada sem graça */
-.lapis{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:15;width:58px;height:84px;padding:0;animation:boia 3.2s ease-in-out infinite;filter:drop-shadow(0 4px 6px rgb(0 0 0/.18))}
+.lapis{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:15;width:76px;height:110px;padding:0;animation:boia 3.2s ease-in-out infinite;filter:drop-shadow(0 4px 6px rgb(0 0 0/.18))}
 .lapis svg{width:100%;height:100%;transform:rotate(14deg)}
 .lapis.mexe{animation:mexe .5s ease-in-out}
 body.locked .lapis,body.locked .balao{display:none}
+.lapis .olhos{transform-box:fill-box;transform-origin:center}
+.lapis.pisca .olhos{animation:pisca .18s ease-in-out}
+.lapis .pupilas{transition:transform .25s ease-out}
+@keyframes pisca{50%{transform:scaleY(.1)}}
 @keyframes boia{50%{transform:translateY(-5px)}}
 @keyframes mexe{20%{transform:rotate(-12deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(3deg)}}
-.balao{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 30px);bottom:calc(112px + env(safe-area-inset-bottom,0px));z-index:15;width:min(260px,calc(100vw - 60px));background:var(--paper);color:var(--ink);border:1.5px solid var(--ink-soft);border-radius:16px;padding:12px 14px 10px;font-family:var(--f-hand);font-size:22px;line-height:1.15;box-shadow:0 8px 20px rgb(0 0 0/.15)}
+.balao{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 40px);bottom:calc(140px + env(safe-area-inset-bottom,0px));z-index:15;width:min(260px,calc(100vw - 60px));background:var(--paper);color:var(--ink);border:1.5px solid var(--ink-soft);border-radius:16px;padding:12px 14px 10px;font-family:var(--f-hand);font-size:22px;line-height:1.15;box-shadow:0 8px 20px rgb(0 0 0/.15)}
 .balao::after{content:"";position:absolute;right:18px;bottom:-9px;width:16px;height:16px;background:var(--paper);border-right:1.5px solid var(--ink-soft);border-bottom:1.5px solid var(--ink-soft);transform:rotate(45deg)}
 .balao .esconder{display:block;margin:8px 0 0 auto;font-family:var(--f-body);font-size:12px;color:var(--ink-soft);text-decoration:underline}
 @media (prefers-reduced-motion:reduce){.lapis,.lapis.mexe{animation:none}}
@@ -237,8 +241,8 @@ body.locked .lapis,body.locked .balao{display:none}
     <rect x="15" y="16" width="30" height="8" fill="#b9c2cc"/><path d="M15 20h30" stroke="#8e98a3" stroke-width="1.5"/>
     <rect x="15" y="24" width="30" height="48" fill="#f2c14e"/><path d="M25 24v48M35 24v48" stroke="#dba93a" stroke-width="1.5"/>
     <path d="M15 72h30L30 96z" fill="#efd3a8"/><path d="M25.5 89h9L30 96z" fill="#1d2a3a"/>
-    <circle cx="23.5" cy="43" r="5" fill="#fff"/><circle cx="36.5" cy="43" r="5" fill="#fff"/>
-    <circle cx="24.5" cy="44" r="2.4" fill="#1d2a3a"/><circle cx="37.5" cy="44" r="2.4" fill="#1d2a3a"/>
+    <g class="olhos"><circle cx="23.5" cy="43" r="5" fill="#fff"/><circle cx="36.5" cy="43" r="5" fill="#fff"/>
+    <g class="pupilas"><circle cx="23.5" cy="43" r="2.4" fill="#1d2a3a"/><circle cx="36.5" cy="43" r="2.4" fill="#1d2a3a"/></g></g>
     <path d="M23 55q7 6 14 0" fill="none" stroke="#1d2a3a" stroke-width="2.2" stroke-linecap="round"/>
     <circle cx="19" cy="52" r="2.6" fill="#e9a3a3" opacity=".7"/><circle cx="41" cy="52" r="2.6" fill="#e9a3a3" opacity=".7"/>
   </svg>
@@ -862,7 +866,20 @@ $("#lapis").addEventListener("click", () => {
   const l = $("#lapis"); l.classList.remove("mexe"); void l.offsetWidth; l.classList.add("mexe");
   clearTimeout(balaoTimer); balaoTimer = setTimeout(() => $("#balao").hidden = true, 9000);
 });
-$("#lapis").addEventListener("animationend", e => { if (e.animationName === "mexe") e.currentTarget.classList.remove("mexe"); });
+$("#lapis").addEventListener("animationend", e => { if (["mexe","pisca"].includes(e.animationName)) e.currentTarget.classList.remove(e.animationName); });
+// Pisca sozinho de vez em quando.
+(function piscar(){
+  setTimeout(() => { const l = $("#lapis"); if (!l.hidden && !matchMedia("(prefers-reduced-motion:reduce)").matches) l.classList.add("pisca"); piscar(); }, 2500 + Math.random() * 4000);
+})();
+// Olha para onde a pessoa toca e, depois de um tempo, volta a olhar para frente.
+let olharTimer;
+addEventListener("pointerdown", e => {
+  const l = $("#lapis"); if (l.hidden) return;
+  const r = l.querySelector(".olhos").getBoundingClientRect();
+  const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2), d = Math.hypot(dx, dy) || 1;
+  const p = l.querySelector(".pupilas"); p.style.transform = `translate(${(dx / d * 2.4).toFixed(2)}px, ${(dy / d * 2.4).toFixed(2)}px)`;
+  clearTimeout(olharTimer); olharTimer = setTimeout(() => p.style.transform = "", 2500);
+});
 $("#esconderlapis").addEventListener("click", () => { store(LAPIS_OFF, true); lapisVisivel(false); render(); flash("Lápis guardado. Para trazer de volta, toque em “Mostrar lápis”."); });
 addEventListener("pointerdown", e => { if (!e.target.closest("#lapis,#balao")) $("#balao").hidden = true; });
 lapisVisivel(!fetchJSON(LAPIS_OFF));
