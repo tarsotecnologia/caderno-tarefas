@@ -64,6 +64,20 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .backup{display:flex;gap:6px;flex-wrap:wrap;padding:14px 0 0 6px;margin-top:auto}
 .backup .chipbtn{font-size:13px;height:32px}
 [hidden]{display:none!important}
+.lock{position:fixed;inset:0;z-index:50;background:var(--desk);display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.lockcard{display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;max-width:340px}
+.lockcard h2{font-family:var(--f-hand);font-size:44px;font-weight:700;margin:0;line-height:1}
+.lockcard p{margin:0;color:var(--ink-soft);font-size:15px;line-height:1.45}
+.lockbtn{width:96px;height:96px;border-radius:50%;background:var(--pen-wash);color:var(--pen);display:grid;place-items:center}
+.lockbtn svg{width:52px;height:52px}
+.lockbtn:active{transform:scale(.96)}
+.lockmsg{min-height:1.4em;color:var(--danger)!important}
+.field{width:100%;height:48px;border:1px solid var(--line);border-radius:12px;background:var(--paper);padding:0 14px;font-size:17px;color:var(--ink)}
+.field:focus{outline:none;border-color:var(--pen)}
+.who{font-size:13px;color:var(--ink-soft);padding:0 6px;width:100%}
+.who strong{color:var(--ink);font-weight:600}
+.linkbtn{font-size:14px;color:var(--ink-soft);text-decoration:underline;min-height:44px}
+body.locked .app,body.locked .toast{visibility:hidden}
 
 /* Page */
 .page{position:relative;background:var(--paper);border-radius:6px 16px 16px 6px;min-height:0;display:flex;flex-direction:column;overflow:hidden;
@@ -153,6 +167,7 @@ li.task{min-height:var(--row)}
   .tab[aria-current="true"]{box-shadow:inset 0 -3px 0 var(--tabc,var(--pen))}
   .newbook{flex:none;padding:0}.newbook input{width:150px}
   .backup{flex:none;flex-wrap:nowrap;padding:0;margin:0}
+  .who{display:none}
   .sheet{padding:0 14px 120px 50px;background-position:38px 0,0 0}
   .page::before{width:16px;background-size:16px 34px;background-image:radial-gradient(circle at 8px 50%,var(--desk) 4px,transparent 5px)}
   h1{font-size:36px}
@@ -162,7 +177,7 @@ li.task{min-height:var(--row)}
 </style>
 
 </head>
-<body>
+<body class="locked">
 <div class="app">
   <nav class="tabs" id="tabs" aria-label="Cadernos"></nav>
   <main class="page">
@@ -197,6 +212,27 @@ li.task{min-height:var(--row)}
 </div>
 <div class="toast" id="toast" hidden><span id="toastmsg"></span><button id="undo" type="button">Desfazer</button></div>
 <input type="file" id="importfile" accept="application/json,.json" hidden>
+<div class="lock" id="auth" role="dialog" aria-modal="true" aria-labelledby="authtitle">
+  <div class="lockcard" id="authlogin">
+    <h2 id="authtitle">Cadernos</h2>
+    <button type="button" class="lockbtn" id="loginbtn" aria-label="Entrar com digital ou Face ID">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 11v3.5c0 2.2-.6 4.2-1.7 6"/><path d="M8.5 10.5a3.5 3.5 0 0 1 7 0v2c0 2.7-.5 5-1.4 7"/><path d="M5.6 15.5c.3-1.6.4-3.1.4-5a6 6 0 0 1 9.5-4.9"/><path d="M18 9.2c.3 1 .3 2 .3 3.1 0 3-.4 5.5-1.1 7.2"/><path d="M3.5 7.5A9.9 9.9 0 0 1 12 2.5c2.9 0 5.5 1.2 7.3 3.2"/></svg>
+    </button>
+    <p>Toque para entrar com a digital ou o Face ID.<br>Cada pessoa vê só as próprias tarefas.</p>
+    <p class="lockmsg" id="loginmsg" aria-live="polite"></p>
+    <button type="button" class="linkbtn" id="gosignup">Criar uma conta</button>
+  </div>
+  <form class="lockcard" id="authsignup" hidden autocomplete="off">
+    <h2>Nova conta</h2>
+    <p>Sua conta fica presa à digital ou ao Face ID deste aparelho. Não há senha para lembrar.</p>
+    <input class="field" id="signupname" maxlength="60" placeholder="Seu nome" aria-label="Seu nome" enterkeyhint="next" required>
+    <input class="field" id="signupcode" maxlength="80" placeholder="Código de convite" aria-label="Código de convite" hidden>
+    <button type="submit" class="primary" id="signupbtn">Criar conta com digital</button>
+    <p class="lockmsg" id="signupmsg" aria-live="polite"></p>
+    <button type="button" class="linkbtn" id="gologin">Já tenho conta</button>
+  </form>
+  <div class="lockcard" id="authwait" hidden><p>Abrindo…</p></div>
+</div>
 
 <script>
 (() => {
@@ -233,15 +269,71 @@ let view = "hoje";
 let openId = null, editId = null, showDone = false, confirmDel = null;
 let backend = null;           // {add, update, remove, saveBooks}
 
-// ---------- local fallback ----------
-const LS = "caderno-tarefas-v1";
-const lsLoad = () => { try { const j = JSON.parse(localStorage.getItem(LS) || "null"); if (j) { tasks = new Map(Object.entries(j.tasks||{})); if (j.books?.length) books = j.books; } } catch {} };
-const lsSave = () => { try { localStorage.setItem(LS, JSON.stringify({tasks:Object.fromEntries(tasks), books})); } catch {} };
-const localBackend = {
-  async add(t){ const id = "t"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); tasks.set(id,{...t,id}); lsSave(); render(); return id; },
-  async update(id,p){ const t = tasks.get(id); if (!t) return; tasks.set(id,{...t,...p}); lsSave(); render(); },
-  async remove(id){ tasks.delete(id); lsSave(); render(); },
-  async saveBooks(){ lsSave(); render(); },
+// ---------- servidor ----------
+// As tarefas ficam no servidor, ligadas à conta. Cada mudança aparece na hora e entra numa fila;
+// a fila é enviada em ordem e, sem internet, espera para ser enviada depois.
+let me = null;                  // {id, name}
+let queue = [];
+let flushing = false;
+const LS = "caderno-tarefas-v1";           // tarefas da versão antiga, sem contas
+const cacheKey = () => `cadernos-cache-${me.id}`;
+const queueKey = () => `cadernos-fila-${me.id}`;
+const store = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const fetchJSON = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } };
+const genId = () => "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+async function api(path, data){
+  const res = await fetch(path, data === undefined ? {credentials:"same-origin"} :
+    {method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)});
+  let j = null; try { j = await res.json(); } catch {}
+  if (!res.ok){ const e = new Error(j?.error || "Erro no servidor."); e.status = res.status; throw e; }
+  return j;
+}
+
+function saveLocal(){ if (!me) return; store(cacheKey(), {books, tasks:[...tasks.values()]}); store(queueKey(), queue); }
+function enqueue(op){
+  if (op.op === "upsert") queue = queue.filter(q => !(q.op === "upsert" && q.task.id === op.task.id));
+  if (op.op === "books") queue = queue.filter(q => q.op !== "books");
+  queue.push(op); saveLocal(); flush();
+}
+async function flush(){
+  if (flushing || !me) return;
+  flushing = true;
+  try {
+    while (queue.length){
+      const op = queue[0];
+      try { await api("/api/data", op); }
+      catch (e) {
+        if (e.status === 401){ sessionEnded(); return; }
+        if (!e.status || e.status >= 500){ setStatus(`Sem conexão: ${queue.length} alteraç${queue.length>1?"ões":"ão"} esperando para salvar`); return; }
+        flash(e.message);           // pedido recusado (ex.: limite): descarta e segue
+      }
+      queue.shift(); saveLocal();
+    }
+    setStatus("");
+  } finally { flushing = false; }
+}
+async function pull(){
+  if (!me) return;
+  await flush();
+  if (queue.length) return;
+  try {
+    const d = await api("/api/data");
+    const next = new Map(d.tasks.map(t => [t.id, t]));
+    const changed = JSON.stringify(d.books) !== JSON.stringify(books) || JSON.stringify([...next]) !== JSON.stringify([...tasks]);
+    if (!changed) return;
+    books = d.books?.length ? d.books : DEFAULT_BOOKS.slice(); tasks = next; saveLocal();
+    if (!["hoje","todas"].includes(view) && !books.some(b => b.id === view)) view = "hoje";
+    const a = document.activeElement;
+    if (a && a.closest?.("#content") && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;   // não atrapalha quem está digitando
+    render();
+  } catch (e) { if (e.status === 401) sessionEnded(); }
+}
+const serverBackend = {
+  async add(t){ const id = genId(); const task = {...t, id}; tasks.set(id, task); render(); enqueue({op:"upsert", task}); return id; },
+  async update(id,p){ const t = tasks.get(id); if (!t) return; const task = {...t, ...p}; tasks.set(id, task); render(); enqueue({op:"upsert", task}); },
+  async remove(id){ tasks.delete(id); render(); enqueue({op:"delete", id}); },
+  async saveBooks(){ render(); enqueue({op:"books", books}); },
 };
 
 // ---------- helpers ----------
@@ -254,7 +346,7 @@ function inView(t){
 }
 const sortOpen = (a,b) => (b.importante?1:0)-(a.importante?1:0) || (a.prazo||"9999").localeCompare(b.prazo||"9999") || (a.criada||0)-(b.criada||0);
 let toastTimer;
-function flash(msg, undo){ $("#toastmsg").textContent = msg; $("#undo").hidden = !undo; $("#undo").onclick = () => { undo?.(); $("#toast").hidden = true; }; $("#toast").hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => $("#toast").hidden = true, 5000); }
+function flash(msg, action, label = "Desfazer", ms = 5000){ $("#toastmsg").textContent = msg; $("#undo").textContent = label; $("#undo").hidden = !action; $("#undo").onclick = () => { $("#toast").hidden = true; action?.(); }; $("#toast").hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => $("#toast").hidden = true, ms); }
 function setStatus(s){ $("#status").textContent = s; $("#status").hidden = !s; }
 
 // ---------- render ----------
@@ -314,9 +406,12 @@ function renderTabs(){
     const id = "c"+Date.now().toString(36); books = [...books,{id,nome:v,cor:COLORS[books.length % COLORS.length]}]; view = id; backend.saveBooks(); }},
     el("input",{name:"nome",id:"newbook",placeholder:"+ Novo caderno","aria-label":"Nome do novo caderno",enterkeyhint:"done"}));
   nav.append(f);
-  nav.append(el("div",{class:"backup"},
+  if (me) nav.append(el("div",{class:"backup"},
+    el("div",{class:"who"},"Conta de ", el("strong",{},me.name)),
     el("button",{class:"chipbtn",type:"button",onclick:exportBackup},"Fazer backup"),
-    el("button",{class:"chipbtn",type:"button",onclick(){ $("#importfile").click(); }},"Restaurar")));
+    el("button",{class:"chipbtn",type:"button",onclick(){ $("#importfile").click(); }},"Restaurar"),
+    el("button",{class:"chipbtn",type:"button",onclick:addDevice,title:"Cadastrar a chave-senha de outro aparelho ou navegador nesta conta"},"Adicionar aparelho"),
+    el("button",{class:"chipbtn",type:"button",onclick:logout},"Sair")));
 }
 
 function renderBookOps(){
@@ -475,20 +570,151 @@ function exportBackup(){
 }
 $("#importfile").addEventListener("change", async e => {
   const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
+  let j;
+  try { j = JSON.parse(await f.text()); if (j.app !== "caderno-tarefas" || !j.tasks || !Array.isArray(j.books)) throw 0; }
+  catch { flash("Esse arquivo não é um backup dos cadernos."); return; }
+  await flush();
+  if (queue.length){ flash("Conecte-se à internet antes de restaurar um backup."); return; }
   try {
-    const j = JSON.parse(await f.text());
-    if (j.app !== "caderno-tarefas" || !j.tasks || !Array.isArray(j.books)) throw 0;
-    const before = {books, tasks:new Map(tasks)};
-    books = j.books.length ? j.books : books; tasks = new Map(Object.entries(j.tasks));
-    lsSave(); view = "todas"; render();
-    flash(`Backup restaurado: ${tasks.size} tarefas`, () => { books = before.books; tasks = before.tasks; lsSave(); render(); });
-  } catch { flash("Esse arquivo não é um backup dos cadernos."); }
+    const d = await api("/api/data", {op:"replace", books: j.books.length ? j.books : books, tasks: Object.values(j.tasks)});
+    books = d.books; tasks = new Map(d.tasks.map(t => [t.id, t])); saveLocal(); view = "todas"; render();
+    flash(`Backup restaurado: ${tasks.size} tarefas`);
+  } catch (err) { flash(err.message); }
 });
 
+// ---------- chave-senha (WebAuthn) ----------
+const toBuf = s => Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0)).buffer;
+const toB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+function creationOptions(o){
+  return {...o, challenge: toBuf(o.challenge), user: {...o.user, id: toBuf(o.user.id)},
+    excludeCredentials: (o.excludeCredentials || []).map(c => ({...c, id: toBuf(c.id)}))};
+}
+function requestOptions(o){
+  return {...o, challenge: toBuf(o.challenge), allowCredentials: (o.allowCredentials || []).map(c => ({...c, id: toBuf(c.id)}))};
+}
+function credJSON(c){
+  const r = c.response, out = {id: c.id, rawId: toB64(c.rawId), type: c.type,
+    authenticatorAttachment: c.authenticatorAttachment || undefined,
+    clientExtensionResults: c.getClientExtensionResults?.() || {}, response: {clientDataJSON: toB64(r.clientDataJSON)}};
+  if (r.attestationObject){
+    out.response.attestationObject = toB64(r.attestationObject);
+    out.response.transports = r.getTransports?.() || [];
+  } else {
+    out.response.authenticatorData = toB64(r.authenticatorData);
+    out.response.signature = toB64(r.signature);
+    if (r.userHandle) out.response.userHandle = toB64(r.userHandle);
+  }
+  return out;
+}
+function passkeyError(e){
+  if (e?.name === "NotAllowedError") return "Cancelado ou não confirmado. Toque para tentar de novo.";
+  if (e?.name === "InvalidStateError") return "Este aparelho já tem uma chave-senha nesta conta.";
+  if (e?.name === "SecurityError") return "Abra o app pelo endereço publicado (https) para usar a digital.";
+  return e?.message || "Algo deu errado. Tente de novo.";
+}
+
+// ---------- entrar / criar conta ----------
+let signupNeedsCode = false;
+function showAuth(which){
+  document.body.classList.add("locked");
+  $("#auth").hidden = false;
+  for (const id of ["authlogin","authsignup","authwait"]) $("#"+id).hidden = id !== "auth"+which;
+  $("#signupcode").hidden = !signupNeedsCode; $("#signupcode").required = signupNeedsCode;
+  $("#loginmsg").textContent = ""; $("#signupmsg").textContent = "";
+  if (which === "signup") $("#signupname").focus(); else if (which === "login") $("#loginbtn").focus();
+}
+$("#gosignup").addEventListener("click", () => showAuth("signup"));
+$("#gologin").addEventListener("click", () => showAuth("login"));
+
+$("#loginbtn").addEventListener("click", async () => {
+  const msg = $("#loginmsg"); msg.textContent = "";
+  try {
+    const opts = await api("/api/auth", {action:"login-options"});
+    const cred = await navigator.credentials.get({publicKey: requestOptions(opts)});
+    const r = await api("/api/auth", {action:"login-verify", credential: credJSON(cred)});
+    await start(r.user);
+  } catch (e) { msg.textContent = passkeyError(e); }
+});
+
+$("#authsignup").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const msg = $("#signupmsg"), btn = $("#signupbtn"); msg.textContent = "";
+  const name = $("#signupname").value.trim(); if (!name){ msg.textContent = "Escreva seu nome."; return; }
+  btn.disabled = true;
+  try {
+    const opts = await api("/api/auth", {action:"register-options", name, code: $("#signupcode").value});
+    const cred = await navigator.credentials.create({publicKey: creationOptions(opts)});
+    const r = await api("/api/auth", {action:"register-verify", credential: credJSON(cred)});
+    $("#signupname").value = ""; $("#signupcode").value = "";
+    await start(r.user, "Conta criada. Bem-vindo(a)!");
+  } catch (e) { msg.textContent = passkeyError(e); }
+  finally { btn.disabled = false; }
+});
+
+async function addDevice(){
+  try {
+    const opts = await api("/api/auth", {action:"register-options", addDevice:true});
+    const cred = await navigator.credentials.create({publicKey: creationOptions(opts)});
+    await api("/api/auth", {action:"register-verify", credential: credJSON(cred)});
+    flash("Pronto. Esta chave-senha também entra na sua conta.");
+  } catch (e) { flash(passkeyError(e)); }
+}
+
+async function logout(){
+  await flush();
+  if (queue.length){ flash(`Ainda há ${queue.length} alteraç${queue.length>1?"ões":"ão"} sem salvar. Conecte-se à internet antes de sair.`); return; }
+  try { await api("/api/auth", {action:"logout"}); } catch {}
+  store(cacheKey(), null); store(queueKey(), null);
+  clearState(); showAuth("login");
+}
+function clearState(){ me = null; tasks = new Map(); books = DEFAULT_BOOKS.slice(); queue = []; view = "hoje"; openId = editId = null; render(); }
+function sessionEnded(){ clearState(); showAuth("login"); $("#loginmsg").textContent = "Sua sessão terminou. Entre de novo."; }
+
+async function start(user, welcome){
+  me = user;
+  const cached = fetchJSON(cacheKey());
+  queue = fetchJSON(queueKey()) || [];
+  if (cached){ books = cached.books?.length ? cached.books : DEFAULT_BOOKS.slice(); tasks = new Map(cached.tasks.map(t => [t.id, t])); }
+  view = "hoje"; render();
+  document.body.classList.remove("locked"); $("#auth").hidden = true;
+  await pull();
+  render();
+  if (!offerLegacyImport() && welcome) flash(welcome);
+}
+
+// Tarefas da versão sem contas, guardadas neste aparelho.
+function offerLegacyImport(){
+  const old = fetchJSON(LS);
+  const list = old?.tasks ? Object.values(old.tasks) : [];
+  if (!list.length) return false;
+  flash(`Encontrei ${list.length} tarefa${list.length>1?"s":""} guardada${list.length>1?"s":""} neste aparelho de antes das contas.`, async () => {
+    const merged = [...books]; for (const b of old.books || []) if (!merged.some(x => x.id === b.id)) merged.push(b);
+    try {
+      const d = await api("/api/data", {op:"replace", merge:true, books: merged, tasks: list});
+      books = d.books; tasks = new Map(d.tasks.map(t => [t.id, t])); saveLocal(); store(LS, null); render();
+      flash("Tarefas antigas trazidas para a sua conta.");
+    } catch (e) { flash(e.message); }
+  }, "Trazer para minha conta", 20000);
+  return true;
+}
+
 // ---------- boot ----------
-lsLoad(); backend = localBackend; render();
-addEventListener("storage", e => { if (e.key === LS){ lsLoad(); render(); } });
-addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+backend = serverBackend;
+render();
+(async () => {
+  showAuth("wait");
+  try {
+    const r = await api("/api/auth");
+    signupNeedsCode = !!r.signupCode;
+    if (r.user) await start(r.user); else showAuth("login");
+  } catch (e) {
+    showAuth("login");
+    $("#loginmsg").textContent = e.status ? e.message : "Sem conexão com a internet. Conecte-se para entrar.";
+  }
+})();
+addEventListener("online", () => pull());
+addEventListener("visibilitychange", () => { if (!document.hidden){ render(); pull(); } });
+setInterval(() => { if (!document.hidden) pull(); }, 60000);
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("/sw.js").catch(()=>{});
 })();
 </script>

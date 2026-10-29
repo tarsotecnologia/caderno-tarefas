@@ -1,6 +1,6 @@
 // Mantém o app abrindo mesmo sem internet.
 // Ao mudar algum arquivo do app, aumente o número da versão abaixo.
-const CACHE = "cadernos-v1";
+const CACHE = "cadernos-v3";
 const CORE = ["/", "/index.html", "/manifest.webmanifest", "/icons/icon.svg", "/icons/apple-touch-icon.png", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -19,6 +19,7 @@ self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
+  if (url.origin === location.origin && url.pathname.startsWith("/api/")) return;   // dados e login: sempre da rede
 
   // Páginas: tenta a rede primeiro (para receber atualizações), cai no cache se estiver offline.
   if (req.mode === "navigate") {
