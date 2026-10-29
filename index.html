@@ -90,7 +90,14 @@ body.locked .app,body.locked .toast{visibility:hidden}
 header.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;min-height:calc(var(--row)*2);padding-top:18px;box-sizing:border-box}
 h1{font-family:var(--f-hand);font-weight:700;font-size:44px;line-height:1;margin:0;color:var(--hc,var(--ink));text-wrap:balance}
 .date{font-family:var(--f-mono);font-size:13px;color:var(--ink-soft);padding-bottom:8px}
-.bookops{display:flex;gap:6px;padding-bottom:6px}
+.bookops{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-bottom:6px}
+.swatches{display:flex;align-items:center;gap:6px}
+.swatch{width:28px;height:28px;border-radius:50%;background:var(--sw);border:2px solid var(--paper);box-shadow:0 0 0 1px var(--line);flex:none;position:relative;overflow:hidden}
+.swatch[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ink)}
+.swatch.custom{background:conic-gradient(#c0563a,#b58a1e,#2f8a6e,#3a8bb5,#2c4fa3,#7a4fb0,#c0563a);cursor:pointer}
+.swatch.custom input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.tab[data-id],.movable .txt{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.dragging{opacity:.85;background:var(--paper);box-shadow:0 6px 18px rgb(0 0 0/.18);border-radius:10px;position:relative;z-index:5}
 .chipbtn{font-size:14px;color:var(--ink-soft);height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line)}
 .chipbtn:hover{color:var(--ink);border-color:var(--ink-soft)}
 .chipbtn.warn{color:var(--danger);border-color:var(--danger)}
@@ -266,7 +273,7 @@ $("#today").textContent = new Date().toLocaleDateString("pt-BR",{weekday:"long",
 let tasks = new Map();        // id -> task
 let books = DEFAULT_BOOKS.slice();
 let view = "hoje";
-let openId = null, editId = null, showDone = false, confirmDel = null;
+let openId = null, editId = null, showDone = false, confirmDel = null, pickColor = false;
 let backend = null;           // {add, update, remove, saveBooks}
 
 // ---------- servidor ----------
@@ -345,13 +352,16 @@ function inView(t){
   if (view === "todas") return true;
   return t.caderno === view;
 }
-const sortOpen = (a,b) => (b.importante?1:0)-(a.importante?1:0) || (a.prazo||"9999").localeCompare(b.prazo||"9999") || (a.criada||0)-(b.criada||0);
+// Tarefas arrastadas para uma posição ficam no topo, na ordem escolhida; as outras seguem a ordem automática.
+const sortOpen = (a,b) => a.ordem != null && b.ordem != null ? a.ordem - b.ordem : a.ordem != null ? -1 : b.ordem != null ? 1 : sortAuto(a,b);
+const sortAuto = (a,b) => (b.importante?1:0)-(a.importante?1:0) || (a.prazo||"9999").localeCompare(b.prazo||"9999") || (a.criada||0)-(b.criada||0);
 let toastTimer;
 function flash(msg, action, label = "Desfazer", ms = 5000){ $("#toastmsg").textContent = msg; $("#undo").textContent = label; $("#undo").hidden = !action; $("#undo").onclick = () => { $("#toast").hidden = true; action?.(); }; $("#toast").hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => $("#toast").hidden = true, ms); }
 function setStatus(s){ $("#status").textContent = s; $("#status").hidden = !s; }
 
 // ---------- render ----------
 function render(){
+  if (dragging){ renderLater = true; return; }   // não refaz a tela no meio de um arraste
   renderTabs();
   const cur = view === "hoje" ? {nome:"Hoje"} : view === "todas" ? {nome:"Todas as tarefas"} : book(view);
   $("#title").textContent = cur.nome;
@@ -359,7 +369,7 @@ function render(){
   renderBookOps();
 
   const list = [...tasks.values()].filter(inView);
-  const open = list.filter(t => !t.feita).sort(sortOpen);
+  const open = list.filter(t => !t.feita).sort(view === "hoje" ? sortAuto : sortOpen);
   const done = list.filter(t => t.feita).sort((a,b) => (b.feitaEm||"").localeCompare(a.feitaEm||""));
   const c = $("#content"); c.replaceChildren();
 
@@ -396,13 +406,13 @@ function render(){
 function renderTabs(){
   const nav = $("#tabs"); nav.replaceChildren();
   const count = f => [...tasks.values()].filter(t => !t.feita && f(t)).length;
-  const mk = (id, name, color, n) => { const b = el("button",{class:"tab",type:"button","aria-current":String(view===id),onclick(){ view=id; openId=null; editId=null; showDone=false; render(); $("#sheet").scrollTop=0; }},
+  const mk = (id, name, color, n) => { const b = el("button",{class:"tab",type:"button","aria-current":String(view===id),onclick(){ view=id; openId=null; editId=null; showDone=false; pickColor=false; render(); $("#sheet").scrollTop=0; }},
     el("span",{class:"dot"}), el("span",{class:"name"},name), n ? el("span",{class:"n"},String(n)) : null); if (color) b.style.setProperty("--tabc",color); return b; };
   nav.append(el("div",{class:"brand"},"Cadernos"));
   nav.append(mk("hoje","Hoje","var(--star)",count(t => t.importante || (t.prazo && t.prazo <= todayStr()))));
   nav.append(mk("todas","Todas","var(--ink-soft)",count(()=>true)));
   nav.append(el("hr"), el("div",{class:"label"},"Meus cadernos"));
-  for (const b of books) nav.append(mk(b.id, b.nome, b.cor, count(t => t.caderno === b.id)));
+  for (const b of books){ const t = mk(b.id, b.nome, b.cor, count(t => t.caderno === b.id)); t.dataset.id = b.id; t.title = "Toque e segure para mudar de lugar"; nav.append(t); }
   const f = el("form",{class:"newbook",onsubmit(e){ e.preventDefault(); const v = this.nome.value.trim(); if (!v) return;
     const id = "c"+Date.now().toString(36); books = [...books,{id,nome:v,cor:COLORS[books.length % COLORS.length]}]; view = id; backend.saveBooks(); }},
     el("input",{name:"nome",id:"newbook",placeholder:"+ Novo caderno","aria-label":"Nome do novo caderno",enterkeyhint:"done"}));
@@ -428,6 +438,14 @@ function renderBookOps(){
     if (!v || v === b.nome) return;
     books = books.map(x => x.id === b.id ? {...x, nome:v} : x); backend.saveBooks();
   }},"Renomear"));
+  if (view !== "hoje" && view !== "todas"){
+    const b = book(view);
+    const setColor = cor => { books = books.map(x => x.id === b.id ? {...x, cor} : x); backend.saveBooks(); };
+    box.append(el("button",{class:"chipbtn",type:"button","aria-expanded":String(pickColor),onclick(){ pickColor = !pickColor; render(); }},"Cor"));
+    if (pickColor) box.append(el("div",{class:"swatches",role:"group","aria-label":"Cor do caderno"},
+      COLORS.map(c => el("button",{class:"swatch",type:"button",style:`--sw:${c}`,"aria-label":"Usar esta cor","aria-pressed":String(b.cor === c),onclick(){ setColor(c); }})),
+      el("label",{class:"swatch custom",title:"Outra cor"}, el("input",{type:"color",value:b.cor,"aria-label":"Escolher outra cor",onchange(){ setColor(this.value); }}))));
+  }
   if (view !== "hoje" && view !== "todas" && books.length > 1){
     const b = book(view), n = [...tasks.values()].filter(t => t.caderno === b.id).length;
     const armed = confirmDel === "book:"+b.id;
@@ -441,7 +459,7 @@ function renderBookOps(){
 }
 
 function taskRow(t){
-  const li = el("li",{class:"task"+(t.feita?" done":""),"data-id":t.id});
+  const li = el("li",{class:"task"+(t.feita?" done":"")+(!t.feita && view !== "hoje" ? " movable" : ""),"data-id":t.id});
   const check = el("button",{class:"check",type:"button","aria-label":t.feita?"Marcar como não feita":"Marcar como feita",onclick(){ toggle(t); }}, svg(I.check));
   let text;
   if (editId === t.id){
@@ -481,8 +499,72 @@ function detail(t){
 function toggle(t){
   const feita = !t.feita;
   backend.update(t.id,{feita, feitaEm: feita ? new Date().toISOString() : null});
+  if (feita) ding();
   if (feita) flash("Feita ✓", () => backend.update(t.id,{feita:false,feitaEm:null}));
 }
+
+// ---------- som de tarefa feita ----------
+// Gerado na hora (sem arquivo de áudio). No iPhone, o modo silencioso deixa mudo.
+let audio;
+function ding(){
+  try {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === "suspended") audio.resume();
+    const t0 = audio.currentTime;
+    for (const [freq, at] of [[880, 0], [1318.5, 0.09]]){
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.type = "sine"; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t0 + at);
+      g.gain.exponentialRampToValueAtTime(0.22, t0 + at + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + 0.4);
+      o.connect(g).connect(audio.destination); o.start(t0 + at); o.stop(t0 + at + 0.45);
+    }
+  } catch {}
+}
+
+// ---------- arrastar para mudar de lugar ----------
+// No toque: segure o item um instante e arraste. No mouse: é só arrastar.
+let dragging = false, renderLater = false, noClickUntil = 0;
+addEventListener("click", e => { if (Date.now() < noClickUntil){ e.stopPropagation(); e.preventDefault(); } }, true);
+function sortable(box, sel, done){
+  let item = null, on = false, timer = 0, x0 = 0, y0 = 0, before = "";
+  const ids = () => [...box.querySelectorAll(sel)].map(n => n.dataset.id);
+  const start = () => { on = dragging = true; before = ids().join(); item.classList.add("dragging"); navigator.vibrate?.(15); };
+  const stop = () => {
+    clearTimeout(timer);
+    if (on){
+      item.classList.remove("dragging"); on = dragging = false; noClickUntil = Date.now() + 400;
+      const now = ids(); if (now.join() !== before) done(now);
+      if (renderLater){ renderLater = false; render(); }
+    }
+    item = null;
+  };
+  box.addEventListener("pointerdown", e => {
+    const it = e.target.closest(sel);
+    if (!it || e.button > 0 || e.target.closest("input,textarea,select,.check,.icon,.detail")) return;
+    item = it; x0 = e.clientX; y0 = e.clientY;
+    if (e.pointerType !== "mouse") timer = setTimeout(start, 350);
+  });
+  addEventListener("pointermove", e => {
+    if (!item) return;
+    if (!on){
+      if (Math.hypot(e.clientX - x0, e.clientY - y0) > 6){ if (e.pointerType === "mouse") start(); else { clearTimeout(timer); item = null; } }
+      return;
+    }
+    e.preventDefault();
+    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest(sel);
+    if (!over || over === item || over.parentNode !== item.parentNode) return;
+    const r = over.getBoundingClientRect(), ps = getComputedStyle(over.parentNode);
+    const row = ps.display.includes("flex") && ps.flexDirection.startsWith("row");   // abas viram faixa horizontal no celular
+    const after = row ? e.clientX > r.left + r.width / 2 : e.clientY > r.top + r.height / 2;
+    over.parentNode.insertBefore(item, after ? over.nextSibling : over);
+  });
+  addEventListener("pointerup", stop); addEventListener("pointercancel", stop);
+  box.addEventListener("touchmove", e => { if (on) e.preventDefault(); }, {passive:false});
+  box.addEventListener("contextmenu", e => { if (e.target.closest(sel)) e.preventDefault(); });
+}
+sortable($("#tabs"), ".tab[data-id]", order => { books = order.map(id => books.find(b => b.id === id)); backend.saveBooks(); });
+sortable($("#content"), "li.movable", order => order.forEach((id, i) => { if (tasks.get(id)?.ordem !== i + 1) backend.update(id, {ordem: i + 1}); }));
 
 // ---------- add ----------
 $("#addform").addEventListener("submit", e => {

@@ -41,6 +41,7 @@ function cleanTask(t) {
       prazo: /^\d{4}-\d{2}-\d{2}$/.test(String(t.prazo ?? "")) ? t.prazo : null,
       nota: String(t.nota ?? "").slice(0, 10000),
       criada: Number.isFinite(+t.criada) ? +t.criada : Date.now(),
+      ordem: t.ordem != null && Number.isFinite(+t.ordem) ? +t.ordem : null,   // posição escolhida arrastando
     },
   };
 }
