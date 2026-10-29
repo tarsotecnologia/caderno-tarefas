@@ -291,6 +291,20 @@ const pad = n => String(n).padStart(2,"0");
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const todayStr = () => ymd(new Date());
 const plusDays = n => { const d = new Date(); d.setDate(d.getDate()+n); return ymd(d); };
+// Tarefas recorrentes: ao concluir, nasce a próxima com o prazo seguinte (sempre depois de hoje).
+const REPETIR = {dia:"Todo dia", uteis:"Dias úteis", semana:"Toda semana", mes:"Todo mês", ano:"Todo ano"};
+function nextDue(prazo, rep){
+  const [y,m,d] = (prazo || todayStr()).split("-").map(Number), hoje = todayStr();
+  let dt = new Date(y, m-1, d), n = 0;
+  const step = () => {
+    if (rep === "dia") dt.setDate(dt.getDate() + 1);
+    else if (rep === "uteis"){ do dt.setDate(dt.getDate() + 1); while (dt.getDay() === 0 || dt.getDay() === 6); }
+    else if (rep === "semana") dt.setDate(dt.getDate() + 7);
+    else { n += rep === "ano" ? 12 : 1; const last = new Date(y, m-1+n+1, 0).getDate(); dt = new Date(y, m-1+n, Math.min(d, last)); }   // dia 31 vira o último dia do mês
+  };
+  do step(); while (ymd(dt) <= hoje);
+  return ymd(dt);
+}
 const fmtDue = s => {
   if (!s) return "";
   const t = todayStr(), tm = plusDays(1);
@@ -503,6 +517,7 @@ function taskRow(t){
   }
   const meta = el("div",{class:"meta"});
   if (t.prazo && !t.feita) meta.append(el("span",{class:"pill"+(isLate(t)?" late":"")}, fmtDue(t.prazo)));
+  if (t.repetir && !t.feita) meta.append(el("span",{class:"pill",title:REPETIR[t.repetir]}, "↻ " + REPETIR[t.repetir].toLowerCase()));
   if ((view==="hoje") && books.some(b=>b.id===t.caderno)){ const p = el("span",{class:"pill book"}, book(t.caderno).nome); p.style.setProperty("--bc",book(t.caderno).cor); meta.append(p); }
   if (t.nota) meta.append(el("span",{class:"hasnote",title:"Tem anotação"}, svg(I.note)));
   const star = el("button",{class:"icon star"+(t.importante?" on":""),type:"button","aria-pressed":String(!!t.importante),"aria-label":"Importante",onclick(){ backend.update(t.id,{importante:!t.importante}); }}, svg(I.star));
@@ -516,6 +531,10 @@ function detail(t){
   const armed = confirmDel === t.id;
   return el("div",{class:"detail"},
     el("label",{}, "Prazo", el("input",{type:"date",id:"prazo-"+t.id,value:t.prazo||"",onchange(){ backend.update(t.id,{prazo:this.value||null}); }})),
+    el("label",{}, "Repetir", el("select",{id:"rep-"+t.id,onchange(){ const repetir = this.value || null;
+        backend.update(t.id, repetir && !t.prazo ? {repetir, prazo: todayStr()} : {repetir}); }},   // recorrente precisa de um prazo de partida
+      el("option",{value:"",selected:!t.repetir},"Não repete"),
+      Object.entries(REPETIR).map(([k,v]) => el("option",{value:k,selected:t.repetir===k},v)))),
     el("label",{}, "Caderno", el("select",{id:"cad-"+t.id,onchange(){ backend.update(t.id,{caderno:this.value}); }},
       books.map(b => el("option",{value:b.id,selected:b.id===t.caderno},b.nome)))),
     el("label",{class:"notebox"}, "Anotação", el("textarea",{id:"nota-"+t.id,placeholder:"Detalhes, links, telefone…",onblur(){ if (this.value!==(t.nota||"")) backend.update(t.id,{nota:this.value}); }}, t.nota||"")),
@@ -528,11 +547,16 @@ function detail(t){
   );
 }
 
-function toggle(t){
+async function toggle(t){
   const feita = !t.feita;
   backend.update(t.id,{feita, feitaEm: feita ? new Date().toISOString() : null});
-  if (feita) ding();
-  if (feita) flash("Feita ✓", () => backend.update(t.id,{feita:false,feitaEm:null}));
+  if (!feita) return;
+  ding();
+  if (!t.repetir){ flash("Feita ✓", () => backend.update(t.id,{feita:false,feitaEm:null})); return; }
+  const prazo = nextDue(t.prazo, t.repetir);
+  const nextId = await backend.add({texto:t.texto, caderno:t.caderno, feita:false, feitaEm:null, importante:!!t.importante,
+    prazo, nota:t.nota||"", repetir:t.repetir, ordem:t.ordem ?? null, criada:Date.now()});
+  flash(`Feita ✓ Próxima: ${fmtDue(prazo)}`, () => { backend.remove(nextId); backend.update(t.id,{feita:false,feitaEm:null}); });
 }
 
 // ---------- som de tarefa feita ----------

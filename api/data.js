@@ -4,6 +4,7 @@ import { handler, body, db, httpError, requireUser } from "./_lib.js";
 
 const MAX_TASKS = 5000;
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
+const REPETIR = ["dia", "uteis", "semana", "mes", "ano"];   // tarefas recorrentes (igual ao index.html)
 
 export default handler(async (req) => {
   const uid = requireUser(req);
@@ -41,6 +42,7 @@ function cleanTask(t) {
       prazo: /^\d{4}-\d{2}-\d{2}$/.test(String(t.prazo ?? "")) ? t.prazo : null,
       nota: String(t.nota ?? "").slice(0, 10000),
       criada: Number.isFinite(+t.criada) ? +t.criada : Date.now(),
+      repetir: REPETIR.includes(t.repetir) ? t.repetir : null,
       ordem: t.ordem != null && Number.isFinite(+t.ordem) ? +t.ordem : null,   // posição escolhida arrastando
     },
   };
