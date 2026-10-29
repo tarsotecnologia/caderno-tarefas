@@ -278,6 +278,7 @@ let flushing = false;
 const LS = "caderno-tarefas-v1";           // tarefas da versão antiga, sem contas
 const cacheKey = () => `cadernos-cache-${me.id}`;
 const queueKey = () => `cadernos-fila-${me.id}`;
+const KNOWN = "cadernos-ja-entrou";          // este aparelho já entrou numa conta alguma vez
 const store = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const fetchJSON = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } };
 const genId = () => "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -633,7 +634,12 @@ $("#loginbtn").addEventListener("click", async () => {
     const cred = await navigator.credentials.get({publicKey: requestOptions(opts)});
     const r = await api("/api/auth", {action:"login-verify", credential: credJSON(cred)});
     await start(r.user);
-  } catch (e) { msg.textContent = passkeyError(e); }
+  } catch (e) {
+    // No iPhone, fechar a tela "Não há chaves-senha salvas" também chega como NotAllowedError.
+    msg.textContent = e?.name === "NotAllowedError" && !fetchJSON(KNOWN)
+      ? "Não achei uma chave-senha neste aparelho. Se ainda não tem conta, toque em “Criar uma conta”."
+      : passkeyError(e);
+  }
 });
 
 $("#authsignup").addEventListener("submit", async ev => {
@@ -672,6 +678,7 @@ function sessionEnded(){ clearState(); showAuth("login"); $("#loginmsg").textCon
 
 async function start(user, welcome){
   me = user;
+  store(KNOWN, true);
   const cached = fetchJSON(cacheKey());
   queue = fetchJSON(queueKey()) || [];
   if (cached){ books = cached.books?.length ? cached.books : DEFAULT_BOOKS.slice(); tasks = new Map(cached.tasks.map(t => [t.id, t])); }
@@ -706,7 +713,7 @@ render();
   try {
     const r = await api("/api/auth");
     signupNeedsCode = !!r.signupCode;
-    if (r.user) await start(r.user); else showAuth("login");
+    if (r.user) await start(r.user); else showAuth(fetchJSON(KNOWN) ? "login" : "signup");
   } catch (e) {
     showAuth("login");
     $("#loginmsg").textContent = e.status ? e.message : "Sem conexão com a internet. Conecte-se para entrar.";
