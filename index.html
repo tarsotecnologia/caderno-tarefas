@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -9,8 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Cadernos">
-<meta name="theme-color" content="#e8ece9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#13171c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#e8ece9">
+<meta name="color-scheme" content="light">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -19,6 +19,7 @@
 <style>
 /* Layout: a spiral-bound notebook — index tabs on the left, a ruled page with a red margin on the right. */
 :root{
+  color-scheme:light;
   --paper:#f6f8f7; --rule:#d9e3ee; --margin:#e9a3a3; --ink:#1d2a3a; --ink-soft:#5d6b7c;
   --pen:#2c4fa3; --pen-wash:#e3eaf8; --desk:#e8ece9; --line:#cfd7d3; --star:#d4912a; --danger:#b8402f;
   --done:#9aa5b1;
@@ -127,9 +128,11 @@ li.task{min-height:var(--row)}
 .check svg{width:16px;height:16px;opacity:0}
 .task.done .check{background:var(--pen);border-color:var(--pen)}
 .task.done .check svg{opacity:1}
-.txt{flex:1;min-width:0;font-size:18px;line-height:1.35;padding:12px 0;overflow-wrap:anywhere;cursor:text}
+.body{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;column-gap:10px}
+.body .meta:not(:empty){padding-bottom:8px}
+.txt{flex:1 1 160px;min-width:0;font-size:18px;line-height:1.35;padding:12px 0;overflow-wrap:anywhere;cursor:text}
 .task.done .txt{color:var(--done);text-decoration:line-through;text-decoration-color:var(--pen);text-decoration-thickness:2px}
-.txtedit{flex:1;min-width:0;font-size:18px;border:0;border-bottom:2px solid var(--pen);background:transparent;padding:8px 0}
+.txtedit{flex:1 1 160px;min-width:0;font-size:18px;border:0;border-bottom:2px solid var(--pen);background:transparent;padding:8px 0}
 .txtedit:focus{outline:none}
 .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .pill{font-family:var(--f-mono);font-size:12px;padding:3px 8px;border-radius:10px;background:var(--pen-wash);color:var(--pen);white-space:nowrap}
@@ -152,6 +155,29 @@ li.task{min-height:var(--row)}
 .detail .acts{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end}
 
 .group{margin-top:var(--row)}
+.tab .shared{font-size:13px;opacity:.75}
+.busca{margin:6px 0 4px;max-width:520px}
+.vazio{font-size:14px;color:var(--ink-soft);height:var(--row);display:flex;align-items:center;padding-left:40px}
+.sub.dia small{font-family:var(--f-mono);font-size:12px;font-weight:500;margin-left:10px;color:var(--ink-soft)}
+.checklist{grid-column:1/-1;display:flex;flex-direction:column;gap:2px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+.cl-item{display:flex;align-items:center;gap:10px;min-height:40px;font-size:16px;letter-spacing:0;text-transform:none;color:var(--ink)}
+.detail .cl-item input{width:22px;height:22px;padding:0;flex:none;accent-color:var(--pen)}
+.cl-item span{flex:1;min-width:0;overflow-wrap:anywhere}
+.cl-item.feito span{color:var(--done);text-decoration:line-through}
+.cl-del{width:36px;height:36px;border-radius:8px;color:var(--ink-soft);font-size:20px;flex:none}
+.cl-add input{width:100%}
+.modal{border:0;border-radius:16px;background:var(--paper);color:var(--ink);padding:20px 22px;width:min(420px,calc(100vw - 32px));box-shadow:0 18px 50px rgb(0 0 0/.3)}
+.modal::backdrop{background:rgb(10 15 20/.45)}
+.modal h3{font-family:var(--f-hand);font-size:34px;line-height:1;margin:0 0 10px}
+.modal p{color:var(--ink-soft);line-height:1.45;margin:8px 0;font-size:15px}
+.modal .code{font-family:var(--f-mono);font-size:30px;letter-spacing:.1em;text-align:center;padding:14px;border:2px dashed var(--pen);border-radius:12px;margin:12px 0;color:var(--pen);-webkit-user-select:all;user-select:all}
+.modal .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
+.modal .opcoes{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.modal .opcoes button{text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:12px;line-height:1.35}
+.modal .opcoes button small{display:block;color:var(--ink-soft);font-size:13px;margin-top:2px}
+.membros{list-style:none;margin:8px 0 0;padding:0}
+.membros li{display:flex;align-items:center;gap:10px;min-height:44px;border-bottom:1px solid var(--line)}
+.membros li span{flex:1}
 .grouphead{display:flex;align-items:center;gap:10px;height:var(--row);color:var(--ink-soft);font-size:14px;letter-spacing:.06em;text-transform:uppercase}
 .grouphead .caret{transition:transform .15s}
 .grouphead[aria-expanded="false"] .caret{transform:rotate(-90deg)}
@@ -168,6 +194,8 @@ li.task{min-height:var(--row)}
 .lapis{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:15;width:76px;height:110px;padding:0;animation:boia 3.2s ease-in-out infinite;filter:drop-shadow(0 4px 6px rgb(0 0 0/.18))}
 .lapis svg{width:100%;height:100%;transform:rotate(14deg)}
 .lapis.mexe{animation:mexe .5s ease-in-out}
+.lapis.danca{animation:danca 1.2s ease-in-out}
+@keyframes danca{15%{transform:translateY(-26px) rotate(-14deg)}30%{transform:translateY(0) rotate(0)}45%{transform:translateY(-20px) rotate(14deg)}60%{transform:translateY(0)}80%{transform:translateY(-10px) rotate(360deg)}100%{transform:rotate(360deg)}}
 body.locked .lapis,body.locked .balao{display:none}
 .lapis .olhos{transform-box:fill-box;transform-origin:center}
 .lapis.pisca .olhos{animation:pisca .18s ease-in-out}
@@ -180,19 +208,27 @@ body.locked .lapis,body.locked .balao{display:none}
 @keyframes entra{0%{opacity:0;transform:translate(14px,24px) scale(.3) rotate(6deg)}100%{opacity:1;transform:none}}
 .balao::after{content:"";position:absolute;right:18px;bottom:-9px;width:16px;height:16px;background:var(--paper);border-right:1.5px solid var(--ink-soft);border-bottom:1.5px solid var(--ink-soft);transform:rotate(45deg)}
 .balao .esconder{display:block;margin:8px 0 0 auto;font-family:var(--f-body);font-size:12px;color:var(--ink-soft);text-decoration:underline}
-@media (prefers-reduced-motion:reduce){.lapis,.lapis.mexe,.balao.entra{animation:none}}
+@media (prefers-reduced-motion:reduce){.lapis,.lapis.mexe,.lapis.danca,.balao.entra{animation:none}}
 
 @media (max-width:900px) and (min-width:761px){.app{grid-template-columns:200px minmax(0,1fr)}.dictbtn span{display:none}.add .when{max-width:110px}}
-/* Portrait iPad mini / phone: tabs become a scrolling strip */
+.mbar,.scrim{display:none}
+/* Celular: barra fixa com as telas principais; cadernos e conta ficam num menu lateral (☰). */
 @media (max-width:760px){
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:10px;padding-block:10px}
-  .tabs{flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:0;gap:6px;align-items:center}
-  .brand{display:none}.tabs hr,.label{display:none}
-  .tab{border-radius:22px;min-height:44px;flex:none;white-space:nowrap}
-  .tab[aria-current="true"]{box-shadow:inset 0 -3px 0 var(--tabc,var(--pen))}
-  .newbook{flex:none;padding:0}.newbook input{width:150px}
-  .backup{flex:none;flex-wrap:nowrap;padding:0;margin:0}
-  .who{display:none}
+  .mbar{display:flex;align-items:center;gap:6px;min-width:0}
+  .mbar button{height:44px;border-radius:22px;padding:0 12px;color:var(--ink-soft);font-weight:500;display:inline-flex;align-items:center;gap:6px;flex:none}
+  .mbar button[aria-current="true"]{background:var(--paper);color:var(--ink);box-shadow:inset 0 -3px 0 var(--pen)}
+  .mbar svg{width:22px;height:22px;flex:none}
+  .mbar .menubtn{padding:0 12px;background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0/.08);flex:0 1 auto;min-width:46px;overflow:hidden}
+  .mbar .menubtn .cur{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
+  .mbar .menubtn .dot{width:10px;height:10px;border-radius:50%;background:var(--tabc,var(--pen));flex:none}
+  .mbar .lupa{margin-left:auto;padding:0 10px}
+  .tabs{position:fixed;top:0;bottom:0;left:0;z-index:40;width:min(320px,86vw);background:var(--desk);
+    padding:calc(14px + env(safe-area-inset-top,0px)) 12px calc(16px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));
+    transform:translateX(-105%);transition:transform .22s ease;box-shadow:8px 0 30px rgb(0 0 0/.18);visibility:hidden}
+  body.menu .tabs{transform:none;visibility:visible}
+  body.menu .scrim{display:block;position:fixed;inset:0;z-index:39;background:rgb(10 15 20/.35)}
+  .backup{margin-top:12px}
   .sheet{padding:0 14px 120px 50px;background-position:38px 0,0 0}
   .page::before{width:16px;background-size:16px 34px;background-image:radial-gradient(circle at 8px 50%,var(--desk) 4px,transparent 5px)}
   h1{font-size:36px}
@@ -204,6 +240,7 @@ body.locked .lapis,body.locked .balao{display:none}
 </head>
 <body class="locked">
 <div class="app">
+  <div class="mbar" id="mbar"></div>
   <nav class="tabs" id="tabs" aria-label="Cadernos"></nav>
   <main class="page">
     <div class="sheet" id="sheet">
@@ -211,6 +248,7 @@ body.locked .lapis,body.locked .balao{display:none}
         <div><div class="date" id="today"></div><h1 id="title">Hoje</h1></div>
         <div class="bookops" id="bookops"></div>
       </header>
+      <input id="busca" class="field busca" type="search" placeholder="Buscar em tarefas, anotações e checklists" aria-label="Buscar" enterkeyhint="search" autocomplete="off" hidden>
       <form class="add" id="addform" autocomplete="off">
         <span class="plus" aria-hidden="true">+</span>
         <input id="newtask" type="text" placeholder="Escreva uma tarefa e toque em Enter" enterkeyhint="done" aria-label="Nova tarefa">
@@ -223,7 +261,7 @@ body.locked .lapis,body.locked .balao{display:none}
       </form>
       <div class="bulk" id="bulk" hidden>
         <textarea id="bulktext" aria-label="Tarefas ditadas" placeholder="Toque no microfone do teclado e fale tudo de uma vez. Por exemplo: ligar pro dentista amanhã, pagar a conta de luz até sexta, comprar pão, urgente mandar o relatório pro chefe"></textarea>
-        <div class="hint">Separe as tarefas com uma pausa ou dizendo "vírgula". Prazos como "amanhã", "sexta", "dia 15" e "semana que vem" viram datas. "Urgente" ou "importante" ganham estrela.</div>
+        <div class="hint">Separe as tarefas com uma pausa ou dizendo "vírgula". Prazos como "amanhã", "sexta", "dia 15" e "semana que vem" viram datas. Repetições como "todo dia", "toda segunda" e "todo mês dia 10" viram tarefas recorrentes. "Urgente" ou "importante" ganham estrela.</div>
         <div class="acts">
           <span class="msg" id="bulkmsg"></span>
           <button type="button" class="chipbtn" id="bulkcancel">Cancelar</button>
@@ -235,6 +273,7 @@ body.locked .lapis,body.locked .balao{display:none}
     <div class="status" id="status" hidden></div>
   </main>
 </div>
+<div class="scrim" id="scrim"></div>
 <div class="toast" id="toast" hidden><span id="toastmsg"></span><button id="undo" type="button">Desfazer</button></div>
 <input type="file" id="importfile" accept="application/json,.json" hidden>
 <button type="button" class="lapis" id="lapis" aria-label="Lápis: toque para ouvir uma piada" hidden>
@@ -259,7 +298,16 @@ body.locked .lapis,body.locked .balao{display:none}
     <p>Toque para entrar com a digital ou o Face ID.<br>Cada pessoa vê só as próprias tarefas.</p>
     <p class="lockmsg" id="loginmsg" aria-live="polite"></p>
     <button type="button" class="linkbtn" id="gosignup">Criar uma conta</button>
+    <button type="button" class="linkbtn" id="gopair">Tenho um código de outro aparelho</button>
   </div>
+  <form class="lockcard" id="authpair" hidden autocomplete="off">
+    <h2>Entrar com código</h2>
+    <p>No aparelho que já está na sua conta, toque em <strong>Adicionar aparelho → Outro aparelho</strong> e digite aqui o código que aparecer.</p>
+    <input class="field" id="paircode" maxlength="12" placeholder="XXXX-XXXX" aria-label="Código" autocapitalize="characters" autocorrect="off" spellcheck="false" style="text-align:center;font-family:var(--f-mono);letter-spacing:.1em" required>
+    <button type="submit" class="primary" id="pairbtn">Criar chave-senha neste aparelho</button>
+    <p class="lockmsg" id="pairmsg" aria-live="polite"></p>
+    <button type="button" class="linkbtn" id="pairback">Voltar</button>
+  </form>
   <form class="lockcard" id="authsignup" hidden autocomplete="off">
     <h2>Nova conta</h2>
     <p>Sua conta fica presa à digital ou ao Face ID deste aparelho. Não há senha para lembrar.</p>
@@ -305,6 +353,8 @@ function nextDue(prazo, rep){
   do step(); while (ymd(dt) <= hoje);
   return ymd(dt);
 }
+// Lembrete: dia do prazo (ou hoje) + hora local, guardado também como instante em UTC para o servidor.
+const avisoDe = (prazo, hora) => { if (!hora) return null; const [y,m,d] = (prazo || todayStr()).split("-").map(Number); const [h,mi] = hora.split(":").map(Number); return new Date(y, m-1, d, h, mi).toISOString(); };
 const fmtDue = s => {
   if (!s) return "";
   const t = todayStr(), tm = plusDays(1);
@@ -319,6 +369,9 @@ let tasks = new Map();        // id -> task
 let books = DEFAULT_BOOKS.slice();
 let view = "hoje";
 let openId = null, editId = null, showDone = false, confirmDel = null, pickColor = false;
+let query = "", refocusItem = null, pushOn = false;
+const SPECIAL = ["hoje","semana","todas","busca"];          // telas que não são um caderno
+const isBook = v => !SPECIAL.includes(v);
 let backend = null;           // {add, update, remove, saveBooks}
 
 // ---------- servidor ----------
@@ -376,7 +429,7 @@ async function pull(){
     const changed = JSON.stringify(d.books) !== JSON.stringify(books) || JSON.stringify([...next]) !== JSON.stringify([...tasks]);
     if (!changed) return;
     books = d.books?.length ? d.books : DEFAULT_BOOKS.slice(); tasks = next; saveLocal();
-    if (!["hoje","todas"].includes(view) && !books.some(b => b.id === view)) view = "hoje";
+    if (isBook(view) && !books.some(b => b.id === view)) view = "hoje";
     const a = document.activeElement;
     if (a && a.closest?.("#content") && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;   // não atrapalha quem está digitando
     render();
@@ -392,9 +445,15 @@ const serverBackend = {
 // ---------- helpers ----------
 const book = id => books.find(b => b.id === id) || books[0];
 const isLate = t => t.prazo && t.prazo < todayStr();
+const deHoje = t => t.importante || (t.prazo && t.prazo <= todayStr());
+const daSemana = t => t.prazo && t.prazo <= plusDays(6);
+// Busca sem acento e sem maiúsculas, no texto, na anotação e nos itens da checklist.
+const achou = t => { const q = flat(query.trim()); return !!q && flat([t.texto, t.nota, ...(t.itens||[]).map(i => i.texto)].join(" ")).includes(q); };
 function inView(t){
-  if (view === "hoje") return t.feita ? (t.feitaEm||"").slice(0,10) === todayStr() : (t.importante || (t.prazo && t.prazo <= todayStr()));
+  if (view === "hoje") return t.feita ? (t.feitaEm||"").slice(0,10) === todayStr() : deHoje(t);
+  if (view === "semana") return !t.feita && daSemana(t);
   if (view === "todas") return true;
+  if (view === "busca") return achou(t);
   return t.caderno === view;
 }
 // Tarefas arrastadas para uma posição ficam no topo, na ordem escolhida; as outras seguem a ordem automática.
@@ -408,9 +467,11 @@ function setStatus(s){ $("#status").textContent = s; $("#status").hidden = !s; }
 function render(){
   if (dragging){ renderLater = true; return; }   // não refaz a tela no meio de um arraste
   renderTabs();
-  const cur = view === "hoje" ? {nome:"Hoje"} : view === "todas" ? {nome:"Todas as tarefas"} : book(view);
+  const cur = {hoje:{nome:"Hoje"}, semana:{nome:"Esta semana"}, todas:{nome:"Todas as tarefas"}, busca:{nome:"Buscar"}}[view] || book(view);
   $("#title").textContent = cur.nome;
-  $("#title").style.setProperty("--hc", (view!=="hoje"&&view!=="todas") ? cur.cor : "");
+  $("#title").style.setProperty("--hc", isBook(view) ? cur.cor : "");
+  $("#busca").hidden = view !== "busca"; $("#addform").hidden = view === "busca";
+  if (view === "busca") $("#bulk").hidden = true;
   renderBookOps();
 
   const list = [...tasks.values()].filter(inView);
@@ -418,7 +479,9 @@ function render(){
   const done = list.filter(t => t.feita).sort((a,b) => (b.feitaEm||"").localeCompare(a.feitaEm||""));
   const c = $("#content"); c.replaceChildren();
 
+  if (view === "semana"){ renderWeek(c, open); return; }
   if (!open.length && !done.length){
+    if (view === "busca"){ c.append(el("div",{class:"empty"}, el("p",{}, query.trim() ? "Nada encontrado." : "O que você procura?"), el("small",{}, "Busca em todos os cadernos, inclusive nas tarefas feitas."))); return; }
     const msg = view === "hoje" ? ["Nada para hoje.", "Tarefas com prazo para hoje ou marcadas com estrela aparecem aqui."] : ["Página em branco.", "Escreva na linha acima e toque em Enter para anotar a primeira tarefa."];
     c.append(el("div",{class:"empty"}, el("p",{},msg[0]), el("small",{},msg[1])));
     return;
@@ -442,31 +505,71 @@ function render(){
       el("span",{class:"caret"}, svg(I.more)), `Feitas · ${done.length}`);
     head.querySelector("svg").style.cssText = "width:18px;height:18px";
     g.append(head);
-    if (showDone) g.append(el("ul",{class:"list"}, done.map(taskRow)));
+    if (showDone || view === "busca") g.append(el("ul",{class:"list"}, done.map(taskRow)));
     c.append(g);
   }
   if (editId){ const i = c.querySelector(".txtedit"); i?.focus(); }
+  if (refocusItem){ c.querySelector(`li[data-id="${refocusItem}"] .cl-add input`)?.focus(); refocusItem = null; }
+}
+
+// Semana: atrasadas e os próximos 7 dias, um dia por bloco.
+function renderWeek(c, open){
+  const late = open.filter(t => t.prazo < todayStr());
+  if (late.length){ const h = el("div",{class:"sub dia"}, "Atrasadas"); h.style.color = "var(--danger)"; c.append(h, el("ul",{class:"list"}, late.map(taskRow))); }
+  for (let i = 0; i < 7; i++){
+    const d = plusDays(i), [y,m,dd] = d.split("-").map(Number), dt = new Date(y, m-1, dd);
+    const nome = i === 0 ? "Hoje" : i === 1 ? "Amanhã" : dt.toLocaleDateString("pt-BR",{weekday:"long"}).replace("-feira","");
+    const h = el("div",{class:"sub dia"}, nome[0].toUpperCase() + nome.slice(1), el("small",{}, dt.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}).replace(".","")));
+    const day = open.filter(t => t.prazo === d);
+    c.append(h, day.length ? el("ul",{class:"list"}, day.map(taskRow)) : el("div",{class:"vazio"}, "Nada marcado"));
+  }
+}
+
+function irPara(id){
+  view = id; openId = null; editId = null; showDone = false; pickColor = false; confirmDel = null;
+  menu(false); render(); $("#sheet").scrollTop = 0;
+  if (id === "busca") $("#busca").focus();
+}
+// Menu lateral do celular.
+function menu(on){ document.body.classList.toggle("menu", on); $("#mbar .menubtn")?.setAttribute("aria-expanded", String(on)); }
+$("#scrim").addEventListener("click", () => menu(false));
+addEventListener("keydown", e => { if (e.key === "Escape" && document.body.classList.contains("menu")) menu(false); });
+
+function renderBar(){
+  const b = isBook(view) ? book(view) : null;
+  const menuBtn = el("button",{class:"menubtn",type:"button","aria-label":"Abrir menu: cadernos e conta","aria-expanded":"false",onclick(){ menu(true); }},
+    svg('<path d="M4 7h16M4 12h16M4 17h16"/>'), b ? el("span",{class:"dot"}) : null, b ? el("span",{class:"cur"}, b.nome) : null);
+  if (b) menuBtn.style.setProperty("--tabc", b.cor);
+  $("#mbar").replaceChildren(menuBtn,
+    ...[["hoje","Hoje"],["semana","Semana"],["todas","Todas"]].map(([id, nome]) =>
+      el("button",{type:"button","aria-current":String(view===id),onclick(){ irPara(id); }}, nome)),
+    el("button",{class:"lupa",type:"button","aria-label":"Buscar","aria-current":String(view==="busca"),onclick(){ irPara("busca"); }}, svg('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')));
 }
 
 function renderTabs(){
+  renderBar();
   const nav = $("#tabs"); nav.replaceChildren();
   const count = f => [...tasks.values()].filter(t => !t.feita && f(t)).length;
-  const mk = (id, name, color, n) => { const b = el("button",{class:"tab",type:"button","aria-current":String(view===id),onclick(){ view=id; openId=null; editId=null; showDone=false; pickColor=false; render(); $("#sheet").scrollTop=0; }},
-    el("span",{class:"dot"}), el("span",{class:"name"},name), n ? el("span",{class:"n"},String(n)) : null); if (color) b.style.setProperty("--tabc",color); return b; };
+  const mk = (id, name, color, n, shared) => { const b = el("button",{class:"tab",type:"button","aria-current":String(view===id),onclick(){ irPara(id); }},
+    el("span",{class:"dot"}), el("span",{class:"name"},name), shared ? el("span",{class:"shared",title:"Caderno compartilhado"},"👥") : null, n ? el("span",{class:"n"},String(n)) : null); if (color) b.style.setProperty("--tabc",color); return b; };
   nav.append(el("div",{class:"brand"},"Cadernos"));
-  nav.append(mk("hoje","Hoje","var(--star)",count(t => t.importante || (t.prazo && t.prazo <= todayStr()))));
+  nav.append(mk("hoje","Hoje","var(--star)",count(deHoje)));
+  nav.append(mk("semana","Semana","var(--pen)",count(daSemana)));
   nav.append(mk("todas","Todas","var(--ink-soft)",count(()=>true)));
+  nav.append(mk("busca","Buscar","var(--ink-soft)"));
   nav.append(el("hr"), el("div",{class:"label"},"Meus cadernos"));
-  for (const b of books){ const t = mk(b.id, b.nome, b.cor, count(t => t.caderno === b.id)); t.dataset.id = b.id; t.title = "Toque e segure para mudar de lugar"; nav.append(t); }
+  for (const b of books){ const t = mk(b.id, b.nome, b.cor, count(t => t.caderno === b.id), b.shared); t.dataset.id = b.id; t.title = "Toque e segure para mudar de lugar"; nav.append(t); }
   const f = el("form",{class:"newbook",onsubmit(e){ e.preventDefault(); const v = this.nome.value.trim(); if (!v) return;
-    const id = "c"+Date.now().toString(36); books = [...books,{id,nome:v,cor:COLORS[books.length % COLORS.length]}]; view = id; backend.saveBooks(); }},
+    const id = "c"+Date.now().toString(36); books = [...books,{id,nome:v,cor:COLORS[books.length % COLORS.length]}]; view = id; menu(false); backend.saveBooks(); }},
     el("input",{name:"nome",id:"newbook",placeholder:"+ Novo caderno","aria-label":"Nome do novo caderno",enterkeyhint:"done"}));
   nav.append(f);
-  if (me) nav.append(el("div",{class:"backup"},
+  if (me) nav.append(el("button",{class:"linkbtn",type:"button",style:"text-align:left;padding-left:12px",onclick(){ menu(false); joinBook(); }},"Tenho um convite"));
+  if (me) nav.append(el("div",{class:"backup",onclick(){ menu(false); }},
     el("div",{class:"who"},"Conta de ", el("strong",{},me.name)),
     el("button",{class:"chipbtn",type:"button",onclick:exportBackup},"Fazer backup"),
     el("button",{class:"chipbtn",type:"button",onclick(){ $("#importfile").click(); }},"Restaurar"),
-    el("button",{class:"chipbtn",type:"button",onclick:addDevice,title:"Cadastrar a chave-senha de outro aparelho ou navegador nesta conta"},"Adicionar aparelho"),
+    el("button",{class:"chipbtn",type:"button",onclick:addDeviceMenu,title:"Entrar nesta conta com outro aparelho ou navegador"},"Adicionar aparelho"),
+    el("button",{class:"chipbtn",type:"button",onclick: pushOn ? testPush : enablePush}, pushOn ? "Testar lembrete" : "Ativar lembretes"),
     $("#lapis").hidden ? el("button",{class:"chipbtn",type:"button",onclick(){ store(LAPIS_OFF, null); lapisVisivel(true); render(); }},"Mostrar lápis") : null,
     el("button",{class:"chipbtn",type:"button",onclick:logout},"Sair")));
 }
@@ -479,12 +582,12 @@ function renderBookOps(){
     for (const t of gone) await backend.remove(t.id);
     flash(`${gone.length} feita${gone.length>1?"s":""} removida${gone.length>1?"s":""}`, async () => { for (const t of gone){ const {id,...rest} = t; await backend.add(rest); } });
   }},"Limpar feitas"));
-  if (view !== "hoje" && view !== "todas") box.append(el("button",{class:"chipbtn",type:"button",onclick(){
+  if (isBook(view)) box.append(el("button",{class:"chipbtn",type:"button",onclick(){
     const b = book(view), v = prompt("Novo nome do caderno:", b.nome)?.trim().slice(0, 60);
     if (!v || v === b.nome) return;
     books = books.map(x => x.id === b.id ? {...x, nome:v} : x); backend.saveBooks();
   }},"Renomear"));
-  if (view !== "hoje" && view !== "todas"){
+  if (isBook(view)){
     const b = book(view);
     const setColor = cor => { books = books.map(x => x.id === b.id ? {...x, cor} : x); backend.saveBooks(); };
     box.append(el("button",{class:"chipbtn",type:"button","aria-expanded":String(pickColor),onclick(){ pickColor = !pickColor; render(); }},"Cor"));
@@ -492,7 +595,21 @@ function renderBookOps(){
       COLORS.map(c => el("button",{class:"swatch",type:"button",style:`--sw:${c}`,"aria-label":"Usar esta cor","aria-pressed":String(b.cor === c),onclick(){ setColor(c); }})),
       el("label",{class:"swatch custom",title:"Outra cor"}, el("input",{type:"color",value:b.cor,"aria-label":"Escolher outra cor",onchange(){ setColor(this.value); }}))));
   }
-  if (view !== "hoje" && view !== "todas" && books.length > 1){
+  if (isBook(view)){
+    const b = book(view);
+    if (b.shared){
+      box.append(el("button",{class:"chipbtn",type:"button",onclick(){ inviteTo(b.id); }},"Convidar"));
+      box.append(el("button",{class:"chipbtn",type:"button",onclick(){ showMembers(b.id); }}, `Participantes · ${b.membros || 1}`));
+    } else box.append(el("button",{class:"chipbtn",type:"button",onclick(){ shareBook(b.id); }},"Compartilhar"));
+  }
+  if (isBook(view) && book(view).shared && book(view).souDono){
+    const b = book(view), armed = confirmDel === "book:"+b.id;
+    box.append(el("button",{class:"chipbtn"+(armed?" warn":""),type:"button",async onclick(){
+      if (!armed){ confirmDel = "book:"+b.id; render(); return; }
+      confirmDel = null;
+      await online(async () => { const d = await api("/api/data", {op:"delete-shared", id:b.id}); view = "todas"; applyData(d); flash(`Caderno “${b.nome}” apagado para todos.`); });
+    }}, armed ? "Apagar para todos?" : "Apagar caderno"));
+  } else if (isBook(view) && !book(view).shared && books.length > 1){
     const b = book(view), n = [...tasks.values()].filter(t => t.caderno === b.id).length;
     const armed = confirmDel === "book:"+b.id;
     box.append(el("button",{class:"chipbtn"+(armed?" warn":""),type:"button",async onclick(){
@@ -505,7 +622,7 @@ function renderBookOps(){
 }
 
 function taskRow(t){
-  const li = el("li",{class:"task"+(t.feita?" done":"")+(!t.feita && view !== "hoje" ? " movable" : ""),"data-id":t.id});
+  const li = el("li",{class:"task"+(t.feita?" done":"")+(!t.feita && ["todas"].concat(books.map(b => b.id)).includes(view) ? " movable" : ""),"data-id":t.id});
   const check = el("button",{class:"check",type:"button","aria-label":t.feita?"Marcar como não feita":"Marcar como feita",onclick(){ toggle(t); }}, svg(I.check));
   let text;
   if (editId === t.id){
@@ -516,13 +633,15 @@ function taskRow(t){
     text = el("div",{class:"txt",onclick(){ editId=t.id; render(); }}, t.texto);
   }
   const meta = el("div",{class:"meta"});
-  if (t.prazo && !t.feita) meta.append(el("span",{class:"pill"+(isLate(t)?" late":"")}, fmtDue(t.prazo)));
+  if (t.prazo && !t.feita && view !== "semana") meta.append(el("span",{class:"pill"+(isLate(t)?" late":"")}, fmtDue(t.prazo)));
+  if (t.hora && !t.feita) meta.append(el("span",{class:"pill",title:"Lembrete"}, "⏰ " + t.hora));
+  if (t.itens?.length) meta.append(el("span",{class:"pill",title:"Checklist"}, `☑ ${t.itens.filter(i => i.feito).length}/${t.itens.length}`));
   if (t.repetir && !t.feita) meta.append(el("span",{class:"pill",title:REPETIR[t.repetir]}, "↻ " + REPETIR[t.repetir].toLowerCase()));
-  if ((view==="hoje") && books.some(b=>b.id===t.caderno)){ const p = el("span",{class:"pill book"}, book(t.caderno).nome); p.style.setProperty("--bc",book(t.caderno).cor); meta.append(p); }
+  if (["hoje","semana","busca"].includes(view) && books.some(b=>b.id===t.caderno)){ const p = el("span",{class:"pill book"}, book(t.caderno).nome); p.style.setProperty("--bc",book(t.caderno).cor); meta.append(p); }
   if (t.nota) meta.append(el("span",{class:"hasnote",title:"Tem anotação"}, svg(I.note)));
   const star = el("button",{class:"icon star"+(t.importante?" on":""),type:"button","aria-pressed":String(!!t.importante),"aria-label":"Importante",onclick(){ backend.update(t.id,{importante:!t.importante}); }}, svg(I.star));
   const more = el("button",{class:"icon",type:"button","aria-expanded":String(openId===t.id),"aria-label":"Detalhes",onclick(){ openId = openId===t.id?null:t.id; confirmDel=null; render(); }}, svg(I.more));
-  li.append(el("div",{class:"rowline"}, check, text, meta, star, more));
+  li.append(el("div",{class:"rowline"}, check, el("div",{class:"body"}, text, meta), star, more));
   if (openId === t.id) li.append(detail(t));
   return li;
 }
@@ -530,13 +649,15 @@ function taskRow(t){
 function detail(t){
   const armed = confirmDel === t.id;
   return el("div",{class:"detail"},
-    el("label",{}, "Prazo", el("input",{type:"date",id:"prazo-"+t.id,value:t.prazo||"",onchange(){ backend.update(t.id,{prazo:this.value||null}); }})),
+    el("label",{}, "Prazo", el("input",{type:"date",id:"prazo-"+t.id,value:t.prazo||"",onchange(){ const prazo = this.value||null; backend.update(t.id,{prazo, avisoEm: avisoDe(prazo, t.hora)}); }})),
+    el("label",{}, "Lembrete", el("input",{type:"time",id:"hora-"+t.id,value:t.hora||"",onchange(){ setHora(t.id, this.value||null); }})),
     el("label",{}, "Repetir", el("select",{id:"rep-"+t.id,onchange(){ const repetir = this.value || null;
         backend.update(t.id, repetir && !t.prazo ? {repetir, prazo: todayStr()} : {repetir}); }},   // recorrente precisa de um prazo de partida
       el("option",{value:"",selected:!t.repetir},"Não repete"),
       Object.entries(REPETIR).map(([k,v]) => el("option",{value:k,selected:t.repetir===k},v)))),
     el("label",{}, "Caderno", el("select",{id:"cad-"+t.id,onchange(){ backend.update(t.id,{caderno:this.value}); }},
       books.map(b => el("option",{value:b.id,selected:b.id===t.caderno},b.nome)))),
+    checklist(t),
     el("label",{class:"notebox"}, "Anotação", el("textarea",{id:"nota-"+t.id,placeholder:"Detalhes, links, telefone…",onblur(){ if (this.value!==(t.nota||"")) backend.update(t.id,{nota:this.value}); }}, t.nota||"")),
     el("div",{class:"acts"},
       el("button",{class:"chipbtn"+(armed?" warn":""),type:"button",onclick(){
@@ -547,27 +668,50 @@ function detail(t){
   );
 }
 
+function checklist(t){
+  const itens = () => tasks.get(t.id)?.itens || [];
+  const set = list => backend.update(t.id, {itens:list});
+  return el("div",{class:"checklist"}, "Checklist",
+    (t.itens||[]).map(i => el("div",{class:"cl-item"+(i.feito?" feito":"")},
+      el("input",{type:"checkbox",checked:i.feito,"aria-label":"Item feito",onchange(){ set(itens().map(x => x.id === i.id ? {...x, feito:this.checked} : x)); }}),
+      el("span",{}, i.texto),
+      el("button",{class:"cl-del",type:"button","aria-label":"Remover item",onclick(){ set(itens().filter(x => x.id !== i.id)); }},"×"))),
+    el("form",{class:"cl-add",onsubmit(e){ e.preventDefault(); const v = this.item.value.trim(); if (!v) return; refocusItem = t.id; set([...itens(), {id:genId(), texto:v, feito:false}]); }},
+      el("input",{name:"item",placeholder:"+ Adicionar item",enterkeyhint:"done","aria-label":"Novo item da checklist",maxlength:"300"})));
+}
+
+function setHora(id, hora){
+  const t = tasks.get(id); if (!t) return;
+  const prazo = t.prazo || (hora ? todayStr() : null);   // lembrete sem prazo vale para hoje
+  backend.update(id, {hora, prazo, avisoEm: avisoDe(prazo, hora)});
+  if (hora && !pushOn) flash("Para receber o aviso neste aparelho, ative os lembretes.", enablePush, "Ativar", 10000);
+}
+
 async function toggle(t){
   const feita = !t.feita;
   backend.update(t.id,{feita, feitaEm: feita ? new Date().toISOString() : null});
   if (!feita) return;
   ding();
-  if (!t.repetir){ flash("Feita ✓", () => backend.update(t.id,{feita:false,feitaEm:null})); return; }
-  const prazo = nextDue(t.prazo, t.repetir);
-  const nextId = await backend.add({texto:t.texto, caderno:t.caderno, feita:false, feitaEm:null, importante:!!t.importante,
-    prazo, nota:t.nota||"", repetir:t.repetir, ordem:t.ordem ?? null, criada:Date.now()});
-  flash(`Feita ✓ Próxima: ${fmtDue(prazo)}`, () => { backend.remove(nextId); backend.update(t.id,{feita:false,feitaEm:null}); });
+  if (t.repetir){
+    const prazo = nextDue(t.prazo, t.repetir);
+    const nextId = await backend.add({texto:t.texto, caderno:t.caderno, feita:false, feitaEm:null, importante:!!t.importante,
+      prazo, nota:t.nota||"", repetir:t.repetir, ordem:t.ordem ?? null, criada:Date.now(),
+      itens:(t.itens||[]).map(i => ({...i, feito:false})), hora:t.hora||null, avisoEm:avisoDe(prazo, t.hora)});
+    flash(`Feita ✓ Próxima: ${fmtDue(prazo)}`, () => { backend.remove(nextId); backend.update(t.id,{feita:false,feitaEm:null}); });
+  } else flash("Feita ✓", () => backend.update(t.id,{feita:false,feitaEm:null}));
+  // Zerou o Hoje? O lápis comemora.
+  if (deHoje(t) && ![...tasks.values()].some(x => !x.feita && deHoje(x))) setTimeout(comemorar, 350);
 }
 
 // ---------- som de tarefa feita ----------
 // Gerado na hora (sem arquivo de áudio). No iPhone, o modo silencioso deixa mudo.
 let audio;
-function ding(){
+function ding(notas = [[880, 0], [1318.5, 0.09]]){
   try {
     audio ??= new (window.AudioContext || window.webkitAudioContext)();
     if (audio.state === "suspended") audio.resume();
     const t0 = audio.currentTime;
-    for (const [freq, at] of [[880, 0], [1318.5, 0.09]]){
+    for (const [freq, at] of notas){
       const o = audio.createOscillator(), g = audio.createGain();
       o.type = "sine"; o.frequency.value = freq;
       g.gain.setValueAtTime(0.0001, t0 + at);
@@ -627,8 +771,8 @@ $("#addform").addEventListener("submit", e => {
   e.preventDefault();
   const inp = $("#newtask"), v = inp.value.trim(); if (!v) return;
   const w = $("#newwhen").value;
-  const caderno = (view==="hoje"||view==="todas") ? books[0].id : view;
-  const prazo = w !== "" ? plusDays(Number(w)) : (view==="hoje" ? todayStr() : null);
+  const caderno = isBook(view) ? view : books[0].id;
+  const prazo = w !== "" ? plusDays(Number(w)) : (view==="hoje" || view==="semana" ? todayStr() : null);
   backend.add({texto:v, caderno, feita:false, feitaEm:null, importante:false, prazo, nota:"", criada:Date.now()});
   inp.value = ""; $("#newwhen").value = ""; inp.focus();
 });
@@ -664,6 +808,24 @@ const DUE = [
     d.setDate(d.getDate() + add); return ymd(d);
   }],
 ];
+// Repetições ditas ("todo dia", "toda segunda", "todo mês dia 10"): viram tarefa recorrente com o primeiro prazo.
+const diaDoMes = (y, m, day) => new Date(y, m, Math.min(day, new Date(y, m+1, 0).getDate()));
+const RECUR = [
+  [/\b(?:todo|todos os) (?:mes |meses )?dias? (\d{1,2})\b/, m => {
+    const day = +m[1]; if (day < 1 || day > 31) return null;
+    const t = new Date(); t.setHours(0,0,0,0);
+    let d = diaDoMes(t.getFullYear(), t.getMonth(), day); if (d < t) d = diaDoMes(t.getFullYear(), t.getMonth()+1, day);
+    return ["mes", ymd(d)];
+  }],
+  [/\b(?:todo dia|todos os dias|diariamente)\b/, () => ["dia", null]],
+  [/\b(?:dias uteis|de segunda a sexta)\b/, () => ["uteis", null]],
+  [/\b(?:toda|todo|todas as|todos os) (domingo|segunda|terca|quarta|quinta|sexta|sabado)s?(?:-feiras?)?\b/, m => {
+    const d = new Date(); d.setDate(d.getDate() + (WD.indexOf(m[1]) - d.getDay() + 7) % 7); return ["semana", ymd(d)];
+  }],
+  [/\b(?:toda semana|todas as semanas|semanalmente)\b/, () => ["semana", null]],
+  [/\b(?:todo mes|todos os meses|mensalmente)\b/, () => ["mes", null]],
+  [/\b(?:todo ano|todos os anos|anualmente)\b/, () => ["ano", null]],
+];
 const cut = (s, m) => (s.slice(0, m.index) + s.slice(m.index + m[0].length)).replace(/\s{2,}/g," ").trim();
 function localSplit(text){
   return text
@@ -673,24 +835,26 @@ function localSplit(text){
       let texto = s, m;
       let importante = false;
       while ((m = flat(texto).match(/\b(urgente|importante|prioridade|sem falta)\b[:,]?/))){ importante = true; texto = cut(texto, m); }
-      let prazo = null;
-      for (const [re, fn] of DUE){ if ((m = flat(texto).match(re))){ prazo = fn(m); if (prazo){ texto = cut(texto, m); break; } } }
+      let prazo = null, repetir = null;
+      for (const [re, fn] of RECUR){ if ((m = flat(texto).match(re))){ const r = fn(m); if (r){ [repetir, prazo] = r; texto = cut(texto, m); break; } } }
+      if (!prazo) for (const [re, fn] of DUE){ if ((m = flat(texto).match(re))){ prazo = fn(m); if (prazo){ texto = cut(texto, m); break; } } }
       let caderno = null;
       const f = flat(texto);
       for (const [id, rx] of Object.entries(KEYWORDS)) if (rx.test(f) && books.some(b => b.id === id)){ caderno = id; break; }
       for (const b of books) if (new RegExp("\\b(no |caderno )" + flat(b.nome) + "\\b").test(f)){ caderno = b.id; break; }
-      return { texto: texto ? texto[0].toUpperCase() + texto.slice(1) : s, prazo, importante, caderno };
+      return { texto: texto ? texto[0].toUpperCase() + texto.slice(1) : s, prazo, importante, caderno, repetir };
     });
 }
 bgo.addEventListener("click", async () => {
   const text = btext.value.trim();
   if (!text){ bmsg.textContent = "Dite ou escreva pelo menos uma tarefa."; btext.focus(); return; }
-  const defBook = (view==="hoje"||view==="todas") ? books[0].id : view;
+  const defBook = isBook(view) ? view : books[0].id;
   bgo.disabled = true; bgo.textContent = "Separando…"; bmsg.textContent = "";
   const items = localSplit(text);
   const clean = items.map(x => ({
     texto: String(x?.texto||"").trim().slice(0,300),
-    prazo: /^\d{4}-\d{2}-\d{2}$/.test(String(x?.prazo||"")) ? x.prazo : (view==="hoje" ? todayStr() : null),
+    prazo: /^\d{4}-\d{2}-\d{2}$/.test(String(x?.prazo||"")) ? x.prazo : (view==="hoje" || view==="semana" || x?.repetir ? todayStr() : null),
+    repetir: REPETIR[x?.repetir] ? x.repetir : null,
     importante: !!x?.importante,
     caderno: books.some(b => b.id === x?.caderno) ? x.caderno : defBook,
   })).filter(x => x.texto);
@@ -762,13 +926,27 @@ let signupNeedsCode = false;
 function showAuth(which){
   document.body.classList.add("locked");
   $("#auth").hidden = false;
-  for (const id of ["authlogin","authsignup","authwait"]) $("#"+id).hidden = id !== "auth"+which;
+  for (const id of ["authlogin","authsignup","authpair","authwait"]) $("#"+id).hidden = id !== "auth"+which;
   $("#signupcode").hidden = !signupNeedsCode; $("#signupcode").required = signupNeedsCode;
-  $("#loginmsg").textContent = ""; $("#signupmsg").textContent = "";
-  if (which === "signup") $("#signupname").focus(); else if (which === "login") $("#loginbtn").focus();
+  $("#loginmsg").textContent = ""; $("#signupmsg").textContent = ""; $("#pairmsg").textContent = "";
+  if (which === "signup") $("#signupname").focus(); else if (which === "login") $("#loginbtn").focus(); else if (which === "pair") $("#paircode").focus();
 }
 $("#gosignup").addEventListener("click", () => showAuth("signup"));
 $("#gologin").addEventListener("click", () => showAuth("login"));
+$("#gopair").addEventListener("click", () => showAuth("pair"));
+$("#pairback").addEventListener("click", () => showAuth("login"));
+$("#authpair").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const msg = $("#pairmsg"), btn = $("#pairbtn"); msg.textContent = ""; btn.disabled = true;
+  try {
+    const opts = await api("/api/auth", {action:"register-options", pairCode: $("#paircode").value});
+    const cred = await navigator.credentials.create({publicKey: creationOptions(opts)});
+    const r = await api("/api/auth", {action:"register-verify", credential: credJSON(cred)});
+    $("#paircode").value = "";
+    await start(r.user, "Pronto! Este aparelho entrou na sua conta.");
+  } catch (e) { msg.textContent = passkeyError(e); }
+  finally { btn.disabled = false; }
+});
 
 $("#loginbtn").addEventListener("click", async () => {
   const msg = $("#loginmsg"); msg.textContent = "";
@@ -800,6 +978,125 @@ $("#authsignup").addEventListener("submit", async ev => {
   finally { btn.disabled = false; }
 });
 
+// ---------- janelas ----------
+function modal(title, ...kids){
+  const d = el("dialog",{class:"modal"}, el("h3",{}, title), ...kids,
+    el("div",{class:"acts"}, el("button",{class:"chipbtn",type:"button",onclick(){ d.fechar(); }},"Fechar")));
+  d.fechar = () => { if (d.open) d.close(); d.remove(); };
+  d.addEventListener("close", () => d.remove());   // Esc também fecha
+  document.body.append(d); d.showModal(); return d;
+}
+// Mostra um código com botão para enviar/copiar.
+function codeBox(code, texto){
+  return [el("div",{class:"code"}, code),
+    el("button",{class:"primary",type:"button",style:"width:100%",async onclick(){
+      if (navigator.share) { navigator.share({text: texto}).catch(()=>{}); return; }
+      try { await navigator.clipboard.writeText(texto); this.textContent = "Copiado ✓"; } catch { this.textContent = "Copie o código acima"; }
+    }}, navigator.share ? "Enviar" : "Copiar")];
+}
+// Ações que precisam do servidor na hora (não entram na fila).
+async function online(fn){
+  await flush();
+  if (queue.length){ flash("Conecte-se à internet para fazer isso."); return; }
+  try { await fn(); } catch (e) { flash(e.message); }
+}
+function applyData(d){
+  books = d.books?.length ? d.books : DEFAULT_BOOKS.slice(); tasks = new Map(d.tasks.map(t => [t.id, t]));
+  if (isBook(view) && !books.some(b => b.id === view)) view = "hoje";
+  saveLocal(); render();
+}
+
+function addDeviceMenu(){
+  const d = modal("Adicionar aparelho",
+    el("p",{}, "Escolha como o outro aparelho vai entrar nesta conta."),
+    el("div",{class:"opcoes"},
+      el("button",{type:"button",async onclick(){
+        this.disabled = true;
+        try {
+          const r = await api("/api/auth", {action:"pair-create"});
+          d.fechar();
+          modal("Código do aparelho",
+            el("p",{}, "No outro aparelho, abra o app, toque em “Tenho um código de outro aparelho” e digite:"),
+            ...codeBox(r.code, `Código para entrar no Cadernos: ${r.code}`),
+            el("p",{}, `Vale por ${r.minutes} minutos e uma vez só.`));
+        } catch (e) { this.disabled = false; flash(e.message); }
+      }}, "Outro aparelho", el("small",{}, "Mostra um código para digitar no iPhone, iPad ou computador novo.")),
+      el("button",{type:"button",onclick(){ d.fechar(); addDevice(); }}, "Este aparelho ou navegador", el("small",{}, "Cria uma chave-senha aqui, além da que você usou para entrar."))));
+}
+
+// ---------- cadernos compartilhados ----------
+function shareBook(id){
+  const b = book(id);
+  const d = modal("Compartilhar caderno",
+    el("p",{}, `“${b.nome}” e as tarefas dele vão poder ser vistos e editados pelas pessoas que você convidar. Cada uma entra com a própria conta.`),
+    el("div",{class:"acts"}, el("button",{class:"primary",type:"button",async onclick(){
+      this.disabled = true;
+      await online(async () => {
+        const r = await api("/api/data", {op:"share", id});
+        view = r.id; applyData(r); d.fechar(); inviteTo(r.id);
+      });
+      this.disabled = false;
+    }}, "Compartilhar")));
+}
+async function inviteTo(id){
+  await online(async () => {
+    const r = await api("/api/data", {op:"invite", id});
+    modal("Convite",
+      el("p",{}, `Para entrar em “${r.nome}”, a pessoa abre o app, toca em “Tenho um convite” (no fim da lista de cadernos) e digita:`),
+      ...codeBox(r.code, `Convite para o caderno “${r.nome}” no Cadernos: ${r.code}`),
+      el("p",{}, `Vale por ${r.hours} horas, para uma pessoa. Para mais gente, gere outro convite.`));
+  });
+}
+async function joinBook(){
+  const code = prompt("Código do convite (XXXX-XXXX):")?.trim(); if (!code) return;
+  await online(async () => {
+    const r = await api("/api/data", {op:"join", code});
+    view = r.id; applyData(r); flash(`Você entrou no caderno “${book(r.id).nome}”.`);
+  });
+}
+async function showMembers(id){
+  await online(async () => {
+    const r = await api("/api/data", {op:"members", id});
+    const b = book(id);
+    const d = modal("Participantes",
+      el("ul",{class:"membros"}, r.members.map(m => el("li",{},
+        el("span",{}, m.name + (m.eu ? " (você)" : "") + (m.dono ? " · criou" : "")),
+        r.souDono && !m.dono ? el("button",{class:"chipbtn warn",type:"button",async onclick(){
+          await online(async () => { await api("/api/data", {op:"remove-member", id, userId:m.id}); d.fechar(); pull(); flash(`${m.name} saiu do caderno.`); });
+        }},"Remover") : null))),
+      r.souDono ? null : el("div",{class:"acts"}, el("button",{class:"chipbtn warn",type:"button",async onclick(){
+        await online(async () => { const x = await api("/api/data", {op:"leave", id}); d.fechar(); view = "hoje"; applyData(x); flash(`Você saiu de “${b.nome}”.`); });
+      }},"Sair do caderno")));
+  });
+}
+
+// ---------- lembretes (notificações) ----------
+async function enablePush(){
+  try {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window))
+      throw new Error("Este navegador não recebe notificações. No iPhone e iPad, adicione o app à Tela de Início e abra por lá.");
+    const perm = await Notification.requestPermission();   // primeiro, ainda dentro do toque (exigência do iPhone)
+    if (perm !== "granted") throw new Error("As notificações estão bloqueadas. Libere nos Ajustes do aparelho para receber lembretes.");
+    const { publicKey } = await api("/api/push");
+    if (!publicKey) throw new Error("Os lembretes ainda não foram configurados no servidor.");
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:toBuf(publicKey)});
+    await api("/api/push", {op:"subscribe", sub:sub.toJSON()});
+    pushOn = true; render();
+    flash("Lembretes ativados neste aparelho.", testPush, "Testar");
+  } catch (e) { flash(e.message || "Não foi possível ativar os lembretes."); }
+}
+async function testPush(){
+  try { await api("/api/push", {op:"test"}); flash("Enviei uma notificação de teste."); } catch (e) { flash(e.message); }
+}
+async function checkPush(){
+  try {
+    if (!("PushManager" in window) || Notification.permission !== "granted" || !navigator.serviceWorker?.controller) return;
+    const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
+    if (sub){ await api("/api/push", {op:"subscribe", sub:sub.toJSON()}); pushOn = true; render(); }
+  } catch {}
+}
+
 async function addDevice(){
   try {
     const opts = await api("/api/auth", {action:"register-options", addDevice:true});
@@ -812,6 +1109,8 @@ async function addDevice(){
 async function logout(){
   await flush();
   if (queue.length){ flash(`Ainda há ${queue.length} alteraç${queue.length>1?"ões":"ão"} sem salvar. Conecte-se à internet antes de sair.`); return; }
+  try { const sub = await (await navigator.serviceWorker?.ready)?.pushManager?.getSubscription(); if (sub) await api("/api/push", {op:"unsubscribe", endpoint:sub.endpoint}); } catch {}
+  pushOn = false;
   try { await api("/api/auth", {action:"logout"}); } catch {}
   store(cacheKey(), null); store(queueKey(), null);
   clearState(); showAuth("login");
@@ -829,6 +1128,7 @@ async function start(user, welcome){
   document.body.classList.remove("locked"); $("#auth").hidden = true;
   await pull();
   render();
+  checkPush();
   if (!offerLegacyImport() && welcome) flash(welcome);
 }
 
@@ -863,6 +1163,7 @@ render();
   }
 })();
 addEventListener("online", () => pull());
+$("#busca").addEventListener("input", e => { query = e.target.value; render(); });
 
 // ---------- lápis mascote ----------
 const PIADAS = [
@@ -926,7 +1227,23 @@ $("#lapis").addEventListener("click", () => {
   const l = $("#lapis"); l.classList.remove("mexe"); void l.offsetWidth; l.classList.add("mexe");
   clearTimeout(balaoTimer); balaoTimer = setTimeout(() => $("#balao").hidden = true, 9000);
 });
-$("#lapis").addEventListener("animationend", e => { if (["mexe","pisca"].includes(e.animationName)) e.currentTarget.classList.remove(e.animationName); });
+$("#lapis").addEventListener("animationend", e => { if (["mexe","pisca","danca"].includes(e.animationName)) e.currentTarget.classList.remove(e.animationName); });
+const COMEMORA = [
+  "Hoje zerado! Vou contar para o apontador.",
+  "Tudo feito! Sou um lápis orgulhoso.",
+  "Zerou! Até a borracha ficou sem trabalho.",
+  "Nada para hoje. Pode descansar (ou inventar mais tarefas, sei lá).",
+  "Lista de hoje limpinha. Mereço uma piada? Não? Tá bom.",
+  "Uhul! Vou fazer a dancinha do lápis. Pronto, fiz.",
+];
+function comemorar(){
+  const l = $("#lapis"); if (l.hidden) return;
+  ding([[523.25, 0], [659.25, 0.1], [783.99, 0.2], [1046.5, 0.32]]);
+  $("#piada").textContent = COMEMORA[Math.floor(Math.random() * COMEMORA.length)];
+  const b = $("#balao"); b.hidden = false; b.classList.remove("entra"); void b.offsetWidth; b.classList.add("entra");
+  l.classList.remove("mexe", "danca"); void l.offsetWidth; l.classList.add("danca");
+  clearTimeout(balaoTimer); balaoTimer = setTimeout(() => $("#balao").hidden = true, 9000);
+}
 // Pisca sozinho de vez em quando.
 (function piscar(){
   setTimeout(() => { const l = $("#lapis"); if (!l.hidden && !matchMedia("(prefers-reduced-motion:reduce)").matches) l.classList.add("pisca"); piscar(); }, 2500 + Math.random() * 4000);

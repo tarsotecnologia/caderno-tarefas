@@ -68,8 +68,41 @@ Daqui em diante, cada `git push` na `main` publica sozinho.
 2. Toque em **Criar uma conta**, escreva seu nome e confirme com a digital.
 3. Se você já usava a versão anterior neste iPad, o app oferece **Trazer para minha conta**.
 4. No iPhone ou Mac com o mesmo Apple ID, a chave-senha já aparece: é só tocar na digital.
-   Em outro aparelho (Windows, Android), entre usando o QR code com o iPhone e depois toque em
-   **Adicionar aparelho** para criar uma chave-senha própria dele.
+5. Em qualquer outro aparelho: no que já está na conta, toque em **Adicionar aparelho → Outro aparelho**.
+   Aparece um código (vale 10 minutos, uma vez). No aparelho novo, toque em
+   **Tenho um código de outro aparelho** e digite.
+
+### O que o app faz
+
+- **Hoje, Semana, Todas, Buscar**: a Semana mostra atrasadas e os próximos 7 dias; a Busca procura
+  em todos os cadernos, nas anotações e nas checklists, inclusive em tarefas feitas.
+- **Checklist** dentro da tarefa (setinha → Checklist), com o progresso `☑ 2/3` na linha.
+- **Repetir** (todo dia, dias úteis, semana, mês, ano). No ditado: "todo dia", "toda segunda",
+  "todo mês dia 10", "de segunda a sexta".
+- **Lembrete** com horário (setinha → Lembrete). Veja "Lembretes" abaixo.
+- **Cadernos compartilhados**: no caderno, **Compartilhar** gera um convite (vale 48 horas, uma
+  pessoa). Quem recebe toca em **Tenho um convite**, no fim da lista de cadernos. Todos veem e
+  editam as mesmas tarefas; cada um continua com a própria conta e os próprios cadernos.
+
+## Lembretes (notificações)
+
+1. Gere as chaves (uma vez): `npx web-push generate-vapid-keys`.
+2. No Vercel (Settings → Environment Variables, Production), crie e faça **Redeploy**:
+
+| Variável | Valor |
+|---|---|
+| `VAPID_PUBLIC_KEY` | a "Public Key" gerada |
+| `VAPID_PRIVATE_KEY` | a "Private Key" gerada (segredo) |
+| `VAPID_SUBJECT` | `mailto:` + seu e-mail |
+| `CRON_SECRET` | uma senha longa qualquer (segredo) |
+
+3. Algo precisa chamar o envio a cada 5 minutos. O plano gratuito do Vercel só roda cron 1 vez por
+   dia, então use um serviço gratuito como o [cron-job.org](https://cron-job.org):
+   - URL: `https://SEU-ENDERECO/api/push?cron=1`, método GET, a cada 5 minutos
+   - Cabeçalho: `Authorization: Bearer` + o valor de `CRON_SECRET`
+   (No plano Pro do Vercel dá para usar `crons` no `vercel.json` no lugar disso.)
+4. Em cada aparelho, toque em **Ativar lembretes** e permita as notificações. No iPhone e no iPad
+   isso só funciona com o app **adicionado à Tela de Início** (iOS/iPadOS 16.4 ou mais novo).
 
 ## Endereço do site e chaves-senha
 
@@ -102,9 +135,10 @@ para os aparelhos baixarem a versão nova. Ela aparece na segunda vez que o app 
 |---|---|
 | `index.html` | O app (tela, tarefas, entrar e criar conta) |
 | `api/auth.js` | Criar conta, entrar, sair, adicionar aparelho |
-| `api/data.js` | Ler e salvar tarefas e cadernos da conta |
+| `api/data.js` | Ler e salvar tarefas e cadernos da conta; cadernos compartilhados |
+| `api/push.js` | Lembretes: inscrição dos aparelhos e envio das notificações |
 | `api/_lib.js` | Banco de dados, sessão por cookie assinado, criação das tabelas |
 | `api/webauthn.js` | Lista de endereços extras que podem usar as chaves-senha (`/.well-known/webauthn`) |
-| `sw.js` | Faz o app abrir sem internet |
+| `sw.js` | Faz o app abrir sem internet e mostra as notificações |
 | `manifest.webmanifest`, `icons/` | Nome, cores e ícones do app instalado |
 | `vercel.json` | Cabeçalhos para o Vercel |

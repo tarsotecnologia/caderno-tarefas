@@ -1,6 +1,6 @@
 // Mantém o app abrindo mesmo sem internet.
 // Ao mudar algum arquivo do app, aumente o número da versão abaixo.
-const CACHE = "cadernos-v10";
+const CACHE = "cadernos-v12";
 const CORE = ["/", "/index.html", "/manifest.webmanifest", "/icons/icon.svg", "/icons/apple-touch-icon.png", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -43,4 +43,18 @@ self.addEventListener("fetch", (e) => {
       })
     );
   }
+});
+
+// Lembretes: mostra a notificação enviada pelo servidor e abre o app ao tocar nela.
+self.addEventListener("push", (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch {}
+  e.waitUntil(self.registration.showNotification(d.title || "Cadernos", {
+    body: d.body || "", tag: d.tag, icon: "/icons/icon-192.png", badge: "/icons/icon-192.png",
+  }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true })
+    .then((list) => (list[0] ? list[0].focus() : self.clients.openWindow("/"))));
 });

@@ -2,9 +2,12 @@
   "name": "caderno-tarefas",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@simplewebauthn/server": "14.0.3",
-    "pg": "8.23.1"
+    "pg": "8.23.1",
+    "web-push": "3.6.7"
   }
 }

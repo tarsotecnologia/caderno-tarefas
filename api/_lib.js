@@ -41,6 +41,48 @@ export function migrate() {
       updated_at timestamptz not null default now(),
       primary key (user_id, id)
     );
+    -- código curto para entrar num aparelho novo (pareamento) ou num caderno compartilhado (convite)
+    create table if not exists codes (
+      hash text primary key,
+      kind text not null,
+      user_id text not null references users(id) on delete cascade,
+      book_id text,
+      expires_at timestamptz not null
+    );
+    -- cadernos compartilhados: os dados ficam no caderno, não em uma pessoa
+    create table if not exists shared_books (
+      id text primary key,
+      owner_id text not null references users(id) on delete cascade,
+      nome text not null,
+      cor text not null,
+      created_at timestamptz not null default now()
+    );
+    create table if not exists book_members (
+      book_id text not null references shared_books(id) on delete cascade,
+      user_id text not null references users(id) on delete cascade,
+      primary key (book_id, user_id)
+    );
+    create index if not exists book_members_user on book_members(user_id);
+    create table if not exists shared_tasks (
+      book_id text not null references shared_books(id) on delete cascade,
+      id text not null,
+      data jsonb not null,
+      updated_at timestamptz not null default now(),
+      primary key (book_id, id)
+    );
+    -- lembretes: aparelhos que recebem notificação e avisos já enviados
+    create table if not exists push_subs (
+      endpoint text primary key,
+      user_id text not null references users(id) on delete cascade,
+      sub jsonb not null,
+      created_at timestamptz not null default now()
+    );
+    create table if not exists sent_reminders (
+      task_id text not null,
+      aviso_em text not null,
+      sent_at timestamptz not null default now(),
+      primary key (task_id, aviso_em)
+    );
   `).catch((e) => { ready = undefined; throw e; });
   return ready;
 }
@@ -150,3 +192,25 @@ export function takeChallenge(req, res) {
 }
 
 export const newId = () => b64u(crypto.randomBytes(16));
+
+// ---------- códigos curtos (pareamento e convite) ----------
+// 8 letras/números sem os que se confundem (0/O, 1/I/L): ~6×10¹¹ combinações, válidos por pouco tempo.
+const CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const codeHash = (code) => crypto.createHash("sha256").update(String(code).toUpperCase().replace(/[^A-Z0-9]/g, "")).digest("base64url");
+export async function createCode(kind, userId, bookId, minutes) {
+  const bytes = crypto.randomBytes(8);
+  const code = [...bytes].map((b) => CODE_CHARS[b % CODE_CHARS.length]).join("");
+  await db().query("delete from codes where expires_at < now()");
+  await db().query("insert into codes (hash, kind, user_id, book_id, expires_at) values ($1, $2, $3, $4, now() + make_interval(mins => $5))",
+    [codeHash(code), kind, userId, bookId || null, minutes]);
+  return `${code.slice(0, 4)}-${code.slice(4)}`;
+}
+// Devolve o código válido (sem apagar); use takeCode para gastar.
+export async function findCode(kind, code) {
+  const { rows } = await db().query("select hash, user_id, book_id from codes where hash = $1 and kind = $2 and expires_at > now()", [codeHash(code), kind]);
+  return rows[0] || null;
+}
+export async function takeCode(client, hash) {
+  const { rowCount } = await client.query("delete from codes where hash = $1 and expires_at > now()", [hash]);
+  return rowCount === 1;
+}

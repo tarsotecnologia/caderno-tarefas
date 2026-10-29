@@ -6,6 +6,7 @@ import {
 import {
   handler, body, db, site, httpError, newId,
   setSession, clearSession, sessionUser, setChallenge, takeChallenge,
+  requireUser, createCode, findCode, takeCode,
 } from "./_lib.js";
 
 const RP_NAME = "Cadernos";
@@ -20,6 +21,7 @@ export default handler(async (req, res) => {
     case "register-verify": return registerVerify(req, res, b);
     case "login-options": return loginOptions(req, res);
     case "login-verify": return loginVerify(req, res, b);
+    case "pair-create": return { code: await createCode("pair", requireUser(req), null, 10), minutes: 10 };
     case "logout": clearSession(req, res); return { ok: true };
     default: throw httpError(400, "Ação desconhecida.");
   }
@@ -39,8 +41,16 @@ async function me(req) {
 async function registerOptions(req, res, b) {
   const { rpID } = site(req);
   const current = sessionUser(req);
-  let userId, name, exclude = [];
-  if (current && b.addDevice) {
+  let userId, name, exclude = [], pair = null;
+  if (b.pairCode) {
+    // Aparelho novo entrando com o código mostrado num aparelho que já está na conta.
+    const c = await findCode("pair", b.pairCode);
+    if (!c) throw httpError(400, "Código inválido ou vencido. Gere outro no aparelho que já está na conta.");
+    const { rows } = await db().query("select name from users where id = $1", [c.user_id]);
+    if (!rows[0]) throw httpError(400, "Código inválido ou vencido.");
+    userId = c.user_id; name = rows[0].name; pair = c.hash;
+    exclude = (await db().query("select id, transports from credentials where user_id = $1", [userId])).rows;
+  } else if (current && b.addDevice) {
     const { rows } = await db().query("select name from users where id = $1", [current]);
     if (!rows[0]) throw httpError(401, "Entre na sua conta para continuar.");
     userId = current; name = rows[0].name;
@@ -60,7 +70,7 @@ async function registerOptions(req, res, b) {
     authenticatorSelection: { residentKey: "required", userVerification: "required" },
     preferredAuthenticatorType: "localDevice",
   });
-  setChallenge(req, res, { c: options.challenge, u: userId, n: name, add: !!(current && b.addDevice) });
+  setChallenge(req, res, { c: options.challenge, u: userId, n: name, add: !pair && !!(current && b.addDevice), pair });
   return options;
 }
 
@@ -80,7 +90,10 @@ async function registerVerify(req, res, b) {
   const client = await db().connect();
   try {
     await client.query("begin");
-    if (ch.add) {
+    if (ch.pair) {
+      // O código só vale uma vez.
+      if (!(await takeCode(client, ch.pair))) throw httpError(400, "Código inválido ou vencido. Gere outro no aparelho que já está na conta.");
+    } else if (ch.add) {
       if (sessionUser(req) !== ch.u) throw httpError(401, "Entre na sua conta para continuar.");
     } else {
       await client.query("insert into users (id, name, books) values ($1, $2, $3)", [ch.u, ch.n, JSON.stringify(DEFAULT_BOOKS)]);
