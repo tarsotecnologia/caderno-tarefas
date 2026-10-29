@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Caderno de Tarefas</title>
+<meta name="description" content="Cadernos de tarefas para iPad">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Cadernos">
+<meta name="theme-color" content="#e8ece9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#13171c" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a spiral-bound notebook — index tabs on the left, a ruled page with a red margin on the right. */
+:root{
+  --paper:#f6f8f7; --rule:#d9e3ee; --margin:#e9a3a3; --ink:#1d2a3a; --ink-soft:#5d6b7c;
+  --pen:#2c4fa3; --pen-wash:#e3eaf8; --desk:#e8ece9; --line:#cfd7d3; --star:#d4912a; --danger:#b8402f;
+  --done:#9aa5b1;
+  --f-hand:"Caveat","Bradley Hand","Segoe Print",cursive;
+  --f-body:"Figtree",-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --row:52px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#1b2027; --rule:#2a323d; --margin:#7a3b40; --ink:#e6ebf1; --ink-soft:#9aa6b4;
+  --pen:#8fb0ff; --pen-wash:#26324a; --desk:#13171c; --line:#2c343e; --star:#e8b04f; --danger:#ef7d6b;
+  --done:#5f6b78; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#1b2027; --rule:#2a323d; --margin:#7a3b40; --ink:#e6ebf1; --ink-soft:#9aa6b4;
+  --pen:#8fb0ff; --pen-wash:#26324a; --desk:#13171c; --line:#2c343e; --star:#e8b04f; --danger:#ef7d6b;
+  --done:#5f6b78; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--desk)}
+body{margin:0;overflow:hidden;background:var(--desk);color:var(--ink);font-family:var(--f-body);font-size:17px;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--pen);outline-offset:2px;border-radius:6px}
+
+.app{display:grid;grid-template-columns:260px minmax(0,1fr);gap:0;height:100%;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px;box-sizing:border-box}
+
+/* Index tabs */
+.tabs{display:flex;flex-direction:column;gap:6px;padding:8px 12px 8px 0;overflow-y:auto;min-height:0}
+.brand{font-family:var(--f-hand);font-size:34px;font-weight:700;line-height:1;padding:6px 12px 14px;color:var(--ink)}
+.tab{display:flex;align-items:center;gap:12px;min-height:48px;padding:0 14px;border-radius:12px 4px 4px 12px;text-align:left;color:var(--ink-soft);font-weight:500}
+.tab:hover{background:color-mix(in srgb,var(--paper) 55%,transparent)}
+.tab[aria-current="true"]{background:var(--paper);color:var(--ink);box-shadow:-3px 0 0 var(--tabc,var(--pen)) inset}
+.tab .dot{width:12px;height:12px;border-radius:50%;background:var(--tabc,var(--pen));flex:none}
+.tab .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tab .n{font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+.tabs hr{border:0;border-top:1px solid var(--line);margin:8px 12px}
+.label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);padding:4px 14px}
+.newbook{display:flex;gap:6px;padding:4px 0 0 6px}
+.newbook input{flex:1;min-width:0;height:44px;border:1px dashed var(--line);border-radius:10px;background:transparent;padding:0 12px}
+.newbook input:focus{outline:none;border-color:var(--pen);border-style:solid}
+.backup{display:flex;gap:6px;flex-wrap:wrap;padding:14px 0 0 6px;margin-top:auto}
+.backup .chipbtn{font-size:13px;height:32px}
+[hidden]{display:none!important}
+
+/* Page */
+.page{position:relative;background:var(--paper);border-radius:6px 16px 16px 6px;min-height:0;display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 1px 2px rgb(0 0 0/.06),0 8px 28px rgb(20 40 60/.08)}
+.page::before{content:"";position:absolute;inset:0 auto 0 0;width:22px;pointer-events:none;
+  background:radial-gradient(circle at 11px 50%,var(--desk) 5px,transparent 6px) 0 0/22px 34px repeat-y;opacity:.9}
+.sheet{flex:1;overflow-y:auto;padding:0 28px 120px 76px;position:relative;
+  background-image:linear-gradient(var(--margin),var(--margin)),repeating-linear-gradient(to bottom,transparent 0 calc(var(--row) - 1px),var(--rule) calc(var(--row) - 1px) var(--row));
+  background-size:2px 100%,100% 100%;background-position:58px 0,0 0;background-repeat:no-repeat,repeat;background-attachment:local}
+header.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;min-height:calc(var(--row)*2);padding-top:18px;box-sizing:border-box}
+h1{font-family:var(--f-hand);font-weight:700;font-size:44px;line-height:1;margin:0;color:var(--hc,var(--ink));text-wrap:balance}
+.date{font-family:var(--f-mono);font-size:13px;color:var(--ink-soft);padding-bottom:8px}
+.bookops{display:flex;gap:6px;padding-bottom:6px}
+.chipbtn{font-size:14px;color:var(--ink-soft);height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line)}
+.chipbtn:hover{color:var(--ink);border-color:var(--ink-soft)}
+.chipbtn.warn{color:var(--danger);border-color:var(--danger)}
+
+.add{display:flex;align-items:center;gap:12px;height:var(--row)}
+.add .plus{width:28px;height:28px;border-radius:50%;border:2px dashed var(--pen);color:var(--pen);display:grid;place-items:center;flex:none;font-size:20px;line-height:1}
+.add input{flex:1;min-width:0;height:44px;border:0;background:transparent;font-size:18px;color:var(--ink)}
+.add input::placeholder{color:var(--ink-soft)}
+.add input:focus{outline:none}
+.add .when{font-family:var(--f-mono);font-size:13px;height:36px;border:1px solid var(--line);border-radius:18px;padding:0 10px;background:transparent;color:var(--ink-soft)}
+
+.dictbtn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:18px;background:var(--pen-wash);color:var(--pen);font-size:14px;font-weight:600;flex:none}
+.dictbtn svg{width:18px;height:18px}
+.bulk{display:flex;flex-direction:column;gap:10px;padding:10px 0 var(--row)}
+.bulk textarea{min-height:140px;border:2px solid var(--pen);border-radius:12px;background:var(--paper);padding:12px 14px;font-family:var(--f-body);font-size:18px;line-height:1.45;color:var(--ink);resize:vertical}
+.bulk textarea:focus{outline:none}
+.bulk .hint{font-size:14px;color:var(--ink-soft);line-height:1.4}
+.bulk .acts{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+.bulk .msg{flex:1;min-width:0;font-size:14px;color:var(--danger)}
+.primary{height:44px;padding:0 18px;border-radius:22px;background:var(--pen);color:var(--paper);font-weight:600}
+.primary:disabled{opacity:.6}
+@media (max-width:760px){.dictbtn span{display:none}.add .when{max-width:96px}}
+ul.list{list-style:none;margin:0;padding:0}
+li.task{min-height:var(--row)}
+.rowline{display:flex;align-items:center;gap:12px;min-height:var(--row)}
+.check{width:28px;height:28px;border-radius:50%;border:2px solid var(--ink-soft);flex:none;display:grid;place-items:center;transition:background .15s,border-color .15s}
+.check svg{width:16px;height:16px;opacity:0}
+.task.done .check{background:var(--pen);border-color:var(--pen)}
+.task.done .check svg{opacity:1}
+.txt{flex:1;min-width:0;font-size:18px;line-height:1.35;padding:12px 0;overflow-wrap:anywhere;cursor:text}
+.task.done .txt{color:var(--done);text-decoration:line-through;text-decoration-color:var(--pen);text-decoration-thickness:2px}
+.txtedit{flex:1;min-width:0;font-size:18px;border:0;border-bottom:2px solid var(--pen);background:transparent;padding:8px 0}
+.txtedit:focus{outline:none}
+.meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pill{font-family:var(--f-mono);font-size:12px;padding:3px 8px;border-radius:10px;background:var(--pen-wash);color:var(--pen);white-space:nowrap}
+.pill.late{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
+.pill.book{font-family:var(--f-body);font-size:12px;background:transparent;border:1px solid var(--line);color:var(--ink-soft)}
+.pill.book::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bc);margin-right:5px;vertical-align:1px}
+.icon{width:44px;height:44px;display:grid;place-items:center;border-radius:10px;color:var(--ink-soft);flex:none}
+.icon:hover{background:var(--pen-wash)}
+.icon svg{width:22px;height:22px}
+.star.on{color:var(--star)}
+.star.on svg{fill:currentColor}
+.hasnote{color:var(--ink-soft);display:inline-flex}
+.hasnote svg{width:15px;height:15px}
+
+.detail{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;padding:6px 0 16px 40px}
+.detail label{display:flex;flex-direction:column;gap:4px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+.detail input,.detail select,.detail textarea{font-size:16px;text-transform:none;letter-spacing:0;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:0 10px;color:var(--ink)}
+.detail textarea{grid-column:1/-1;height:auto;min-height:72px;padding:10px;resize:vertical;font-family:var(--f-body)}
+.detail .notebox{grid-column:1/-1}
+.detail .acts{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end}
+
+.group{margin-top:var(--row)}
+.grouphead{display:flex;align-items:center;gap:10px;height:var(--row);color:var(--ink-soft);font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+.grouphead .caret{transition:transform .15s}
+.grouphead[aria-expanded="false"] .caret{transform:rotate(-90deg)}
+.sub{font-family:var(--f-hand);font-size:28px;font-weight:600;color:var(--ink-soft);height:var(--row);display:flex;align-items:flex-end;padding-bottom:6px;box-sizing:border-box}
+
+.empty{padding-top:var(--row);color:var(--ink-soft)}
+.empty p{font-family:var(--f-hand);font-size:30px;line-height:var(--row);margin:0;color:var(--ink-soft)}
+.empty small{display:block;font-size:15px;line-height:var(--row)}
+.status{position:absolute;right:16px;bottom:12px;font-size:12px;color:var(--ink-soft);background:var(--paper);padding:4px 8px;border-radius:8px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:12px 18px;border-radius:12px;display:flex;gap:16px;align-items:center;font-size:15px;z-index:20;box-shadow:0 8px 24px rgb(0 0 0/.2)}
+.toast button{color:var(--pen-wash);font-weight:600;text-decoration:underline}
+
+@media (max-width:900px) and (min-width:761px){.app{grid-template-columns:200px minmax(0,1fr)}.dictbtn span{display:none}.add .when{max-width:110px}}
+/* Portrait iPad mini / phone: tabs become a scrolling strip */
+@media (max-width:760px){
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:10px;padding-block:10px}
+  .tabs{flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:0;gap:6px;align-items:center}
+  .brand{display:none}.tabs hr,.label{display:none}
+  .tab{border-radius:22px;min-height:44px;flex:none;white-space:nowrap}
+  .tab[aria-current="true"]{box-shadow:inset 0 -3px 0 var(--tabc,var(--pen))}
+  .newbook{flex:none;padding:0}.newbook input{width:150px}
+  .backup{flex:none;flex-wrap:nowrap;padding:0;margin:0}
+  .sheet{padding:0 14px 120px 50px;background-position:38px 0,0 0}
+  .page::before{width:16px;background-size:16px 34px;background-image:radial-gradient(circle at 8px 50%,var(--desk) 4px,transparent 5px)}
+  h1{font-size:36px}
+  .detail{padding-left:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <nav class="tabs" id="tabs" aria-label="Cadernos"></nav>
+  <main class="page">
+    <div class="sheet" id="sheet">
+      <header class="head">
+        <div><div class="date" id="today"></div><h1 id="title">Hoje</h1></div>
+        <div class="bookops" id="bookops"></div>
+      </header>
+      <form class="add" id="addform" autocomplete="off">
+        <span class="plus" aria-hidden="true">+</span>
+        <input id="newtask" type="text" placeholder="Escreva uma tarefa e toque em Enter" enterkeyhint="done" aria-label="Nova tarefa">
+        <select id="newwhen" class="when" aria-label="Prazo">
+          <option value="">sem prazo</option><option value="0">hoje</option><option value="1">amanhã</option><option value="7">próx. semana</option>
+        </select>
+        <button type="button" class="dictbtn" id="bulkbtn" aria-expanded="false" title="Ditar várias tarefas de uma vez">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Ditar várias</span>
+        </button>
+      </form>
+      <div class="bulk" id="bulk" hidden>
+        <textarea id="bulktext" aria-label="Tarefas ditadas" placeholder="Toque no microfone do teclado e fale tudo de uma vez. Por exemplo: ligar pro dentista amanhã, pagar a conta de luz até sexta, comprar pão, urgente mandar o relatório pro chefe"></textarea>
+        <div class="hint">Separe as tarefas com uma pausa ou dizendo "vírgula". Prazos como "amanhã", "sexta", "dia 15" e "semana que vem" viram datas. "Urgente" ou "importante" ganham estrela.</div>
+        <div class="acts">
+          <span class="msg" id="bulkmsg"></span>
+          <button type="button" class="chipbtn" id="bulkcancel">Cancelar</button>
+          <button type="button" class="primary" id="bulkgo">Separar em tarefas</button>
+        </div>
+      </div>
+      <div id="content"></div>
+    </div>
+    <div class="status" id="status" hidden></div>
+  </main>
+</div>
+<div class="toast" id="toast" hidden><span id="toastmsg"></span><button id="undo" type="button">Desfazer</button></div>
+<input type="file" id="importfile" accept="application/json,.json" hidden>
+
+<script>
+(() => {
+const COLORS = ["#2c4fa3","#2f8a6e","#c0563a","#7a4fb0","#b58a1e","#3a8bb5"];
+const DEFAULT_BOOKS = [{id:"pessoal",nome:"Pessoal",cor:COLORS[0]},{id:"trabalho",nome:"Trabalho",cor:COLORS[1]},{id:"casa",nome:"Casa",cor:COLORS[2]}];
+const $ = s => document.querySelector(s);
+const el = (t, a = {}, ...kids) => { const n = document.createElement(t); for (const [k,v] of Object.entries(a)) { if (k==="class") n.className=v; else if (k.startsWith("on")) n.addEventListener(k.slice(2),v); else if (v!==false && v!=null) n.setAttribute(k,v===true?"":v); } for (const k of kids.flat()) if (k!=null) n.append(k); return n; };
+const svg = d => { const s = document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("viewBox","0 0 24 24"); s.setAttribute("fill","none"); s.setAttribute("stroke","currentColor"); s.setAttribute("stroke-width","2"); s.setAttribute("stroke-linecap","round"); s.setAttribute("stroke-linejoin","round"); s.innerHTML = d; return s; };
+const I = {
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3"/>',
+  star:'<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z"/>',
+  more:'<path d="M6 9l6 6 6-6"/>',
+  note:'<path d="M5 4h14v12l-4 4H5z"/><path d="M15 20v-4h4"/>',
+};
+
+// ---------- dates ----------
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayStr = () => ymd(new Date());
+const plusDays = n => { const d = new Date(); d.setDate(d.getDate()+n); return ymd(d); };
+const fmtDue = s => {
+  if (!s) return "";
+  const t = todayStr(), tm = plusDays(1);
+  if (s === t) return "hoje"; if (s === tm) return "amanhã"; if (s === plusDays(-1)) return "ontem";
+  const [y,m,d] = s.split("-").map(Number); const dt = new Date(y,m-1,d);
+  return dt.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}).replace(".","");
+};
+$("#today").textContent = new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
+
+// ---------- state ----------
+let tasks = new Map();        // id -> task
+let books = DEFAULT_BOOKS.slice();
+let view = "hoje";
+let openId = null, editId = null, showDone = false, confirmDel = null;
+let backend = null;           // {add, update, remove, saveBooks}
+
+// ---------- local fallback ----------
+const LS = "caderno-tarefas-v1";
+const lsLoad = () => { try { const j = JSON.parse(localStorage.getItem(LS) || "null"); if (j) { tasks = new Map(Object.entries(j.tasks||{})); if (j.books?.length) books = j.books; } } catch {} };
+const lsSave = () => { try { localStorage.setItem(LS, JSON.stringify({tasks:Object.fromEntries(tasks), books})); } catch {} };
+const localBackend = {
+  async add(t){ const id = "t"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); tasks.set(id,{...t,id}); lsSave(); render(); return id; },
+  async update(id,p){ const t = tasks.get(id); if (!t) return; tasks.set(id,{...t,...p}); lsSave(); render(); },
+  async remove(id){ tasks.delete(id); lsSave(); render(); },
+  async saveBooks(){ lsSave(); render(); },
+};
+
+// ---------- helpers ----------
+const book = id => books.find(b => b.id === id) || books[0];
+const isLate = t => t.prazo && t.prazo < todayStr();
+function inView(t){
+  if (view === "hoje") return t.feita ? (t.feitaEm||"").slice(0,10) === todayStr() : (t.importante || (t.prazo && t.prazo <= todayStr()));
+  if (view === "todas") return true;
+  return t.caderno === view;
+}
+const sortOpen = (a,b) => (b.importante?1:0)-(a.importante?1:0) || (a.prazo||"9999").localeCompare(b.prazo||"9999") || (a.criada||0)-(b.criada||0);
+let toastTimer;
+function flash(msg, undo){ $("#toastmsg").textContent = msg; $("#undo").hidden = !undo; $("#undo").onclick = () => { undo?.(); $("#toast").hidden = true; }; $("#toast").hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => $("#toast").hidden = true, 5000); }
+function setStatus(s){ $("#status").textContent = s; $("#status").hidden = !s; }
+
+// ---------- render ----------
+function render(){
+  renderTabs();
+  const cur = view === "hoje" ? {nome:"Hoje"} : view === "todas" ? {nome:"Todas as tarefas"} : book(view);
+  $("#title").textContent = cur.nome;
+  $("#title").style.setProperty("--hc", (view!=="hoje"&&view!=="todas") ? cur.cor : "");
+  renderBookOps();
+
+  const list = [...tasks.values()].filter(inView);
+  const open = list.filter(t => !t.feita).sort(sortOpen);
+  const done = list.filter(t => t.feita).sort((a,b) => (b.feitaEm||"").localeCompare(a.feitaEm||""));
+  const c = $("#content"); c.replaceChildren();
+
+  if (!open.length && !done.length){
+    const msg = view === "hoje" ? ["Nada para hoje.", "Tarefas com prazo para hoje ou marcadas com estrela aparecem aqui."] : ["Página em branco.", "Escreva na linha acima e toque em Enter para anotar a primeira tarefa."];
+    c.append(el("div",{class:"empty"}, el("p",{},msg[0]), el("small",{},msg[1])));
+    return;
+  }
+
+  if (view === "todas"){
+    for (const b of books){
+      const bs = open.filter(t => t.caderno === b.id); if (!bs.length) continue;
+      const h = el("div",{class:"sub"}, b.nome); h.style.color = b.cor;
+      c.append(h, el("ul",{class:"list"}, bs.map(taskRow)));
+    }
+    const orphan = open.filter(t => !books.some(b => b.id === t.caderno));
+    if (orphan.length) c.append(el("ul",{class:"list"}, orphan.map(taskRow)));
+  } else {
+    c.append(el("ul",{class:"list"}, open.map(taskRow)));
+  }
+
+  if (done.length){
+    const g = el("section",{class:"group"});
+    const head = el("button",{class:"grouphead",type:"button","aria-expanded":String(showDone),onclick(){ showDone=!showDone; render(); }},
+      el("span",{class:"caret"}, svg(I.more)), `Feitas · ${done.length}`);
+    head.querySelector("svg").style.cssText = "width:18px;height:18px";
+    g.append(head);
+    if (showDone) g.append(el("ul",{class:"list"}, done.map(taskRow)));
+    c.append(g);
+  }
+  if (editId){ const i = c.querySelector(".txtedit"); i?.focus(); }
+}
+
+function renderTabs(){
+  const nav = $("#tabs"); nav.replaceChildren();
+  const count = f => [...tasks.values()].filter(t => !t.feita && f(t)).length;
+  const mk = (id, name, color, n) => { const b = el("button",{class:"tab",type:"button","aria-current":String(view===id),onclick(){ view=id; openId=null; editId=null; showDone=false; render(); $("#sheet").scrollTop=0; }},
+    el("span",{class:"dot"}), el("span",{class:"name"},name), n ? el("span",{class:"n"},String(n)) : null); if (color) b.style.setProperty("--tabc",color); return b; };
+  nav.append(el("div",{class:"brand"},"Cadernos"));
+  nav.append(mk("hoje","Hoje","var(--star)",count(t => t.importante || (t.prazo && t.prazo <= todayStr()))));
+  nav.append(mk("todas","Todas","var(--ink-soft)",count(()=>true)));
+  nav.append(el("hr"), el("div",{class:"label"},"Meus cadernos"));
+  for (const b of books) nav.append(mk(b.id, b.nome, b.cor, count(t => t.caderno === b.id)));
+  const f = el("form",{class:"newbook",onsubmit(e){ e.preventDefault(); const v = this.nome.value.trim(); if (!v) return;
+    const id = "c"+Date.now().toString(36); books = [...books,{id,nome:v,cor:COLORS[books.length % COLORS.length]}]; view = id; backend.saveBooks(); }},
+    el("input",{name:"nome",id:"newbook",placeholder:"+ Novo caderno","aria-label":"Nome do novo caderno",enterkeyhint:"done"}));
+  nav.append(f);
+  nav.append(el("div",{class:"backup"},
+    el("button",{class:"chipbtn",type:"button",onclick:exportBackup},"Fazer backup"),
+    el("button",{class:"chipbtn",type:"button",onclick(){ $("#importfile").click(); }},"Restaurar")));
+}
+
+function renderBookOps(){
+  const box = $("#bookops"); box.replaceChildren();
+  const doneHere = [...tasks.values()].filter(t => t.feita && inView(t));
+  if (doneHere.length) box.append(el("button",{class:"chipbtn",type:"button",async onclick(){
+    const gone = doneHere.map(t => ({...t}));
+    for (const t of gone) await backend.remove(t.id);
+    flash(`${gone.length} feita${gone.length>1?"s":""} removida${gone.length>1?"s":""}`, async () => { for (const t of gone){ const {id,...rest} = t; await backend.add(rest); } });
+  }},"Limpar feitas"));
+  if (view !== "hoje" && view !== "todas" && books.length > 1){
+    const b = book(view), n = [...tasks.values()].filter(t => t.caderno === b.id).length;
+    const armed = confirmDel === "book:"+b.id;
+    box.append(el("button",{class:"chipbtn"+(armed?" warn":""),type:"button",async onclick(){
+      if (!armed){ confirmDel = "book:"+b.id; render(); return; }
+      confirmDel = null;
+      for (const t of [...tasks.values()].filter(t => t.caderno === b.id)) await backend.remove(t.id);
+      books = books.filter(x => x.id !== b.id); view = "todas"; backend.saveBooks();
+    }}, armed ? (n ? `Apagar caderno e ${n} tarefa${n>1?"s":""}?` : "Confirmar") : "Apagar caderno"));
+  }
+}
+
+function taskRow(t){
+  const li = el("li",{class:"task"+(t.feita?" done":""),"data-id":t.id});
+  const check = el("button",{class:"check",type:"button","aria-label":t.feita?"Marcar como não feita":"Marcar como feita",onclick(){ toggle(t); }}, svg(I.check));
+  let text;
+  if (editId === t.id){
+    text = el("input",{class:"txtedit",value:t.texto,"aria-label":"Editar tarefa",enterkeyhint:"done",
+      onkeydown(e){ if (e.key==="Enter") this.blur(); if (e.key==="Escape"){ editId=null; render(); } },
+      onblur(){ const v = this.value.trim(); editId=null; if (v && v!==t.texto) backend.update(t.id,{texto:v}); else render(); }});
+  } else {
+    text = el("div",{class:"txt",onclick(){ editId=t.id; render(); }}, t.texto);
+  }
+  const meta = el("div",{class:"meta"});
+  if (t.prazo && !t.feita) meta.append(el("span",{class:"pill"+(isLate(t)?" late":"")}, fmtDue(t.prazo)));
+  if ((view==="hoje") && books.some(b=>b.id===t.caderno)){ const p = el("span",{class:"pill book"}, book(t.caderno).nome); p.style.setProperty("--bc",book(t.caderno).cor); meta.append(p); }
+  if (t.nota) meta.append(el("span",{class:"hasnote",title:"Tem anotação"}, svg(I.note)));
+  const star = el("button",{class:"icon star"+(t.importante?" on":""),type:"button","aria-pressed":String(!!t.importante),"aria-label":"Importante",onclick(){ backend.update(t.id,{importante:!t.importante}); }}, svg(I.star));
+  const more = el("button",{class:"icon",type:"button","aria-expanded":String(openId===t.id),"aria-label":"Detalhes",onclick(){ openId = openId===t.id?null:t.id; confirmDel=null; render(); }}, svg(I.more));
+  li.append(el("div",{class:"rowline"}, check, text, meta, star, more));
+  if (openId === t.id) li.append(detail(t));
+  return li;
+}
+
+function detail(t){
+  const armed = confirmDel === t.id;
+  return el("div",{class:"detail"},
+    el("label",{}, "Prazo", el("input",{type:"date",id:"prazo-"+t.id,value:t.prazo||"",onchange(){ backend.update(t.id,{prazo:this.value||null}); }})),
+    el("label",{}, "Caderno", el("select",{id:"cad-"+t.id,onchange(){ backend.update(t.id,{caderno:this.value}); }},
+      books.map(b => el("option",{value:b.id,selected:b.id===t.caderno},b.nome)))),
+    el("label",{class:"notebox"}, "Anotação", el("textarea",{id:"nota-"+t.id,placeholder:"Detalhes, links, telefone…",onblur(){ if (this.value!==(t.nota||"")) backend.update(t.id,{nota:this.value}); }}, t.nota||"")),
+    el("div",{class:"acts"},
+      el("button",{class:"chipbtn"+(armed?" warn":""),type:"button",onclick(){
+        if (!armed){ confirmDel=t.id; render(); return; }
+        confirmDel=null; openId=null; const copy={...t}; backend.remove(t.id);
+        flash("Tarefa apagada", () => { const {id,...rest}=copy; backend.add(rest); });
+      }}, armed ? "Toque de novo para apagar" : "Apagar tarefa"))
+  );
+}
+
+function toggle(t){
+  const feita = !t.feita;
+  backend.update(t.id,{feita, feitaEm: feita ? new Date().toISOString() : null});
+  if (feita) flash("Feita ✓", () => backend.update(t.id,{feita:false,feitaEm:null}));
+}
+
+// ---------- add ----------
+$("#addform").addEventListener("submit", e => {
+  e.preventDefault();
+  const inp = $("#newtask"), v = inp.value.trim(); if (!v) return;
+  const w = $("#newwhen").value;
+  const caderno = (view==="hoje"||view==="todas") ? books[0].id : view;
+  const prazo = w !== "" ? plusDays(Number(w)) : (view==="hoje" ? todayStr() : null);
+  backend.add({texto:v, caderno, feita:false, feitaEm:null, importante:false, prazo, nota:"", criada:Date.now()});
+  inp.value = ""; $("#newwhen").value = ""; inp.focus();
+});
+
+// ---------- dictate several ----------
+const bulk = $("#bulk"), btext = $("#bulktext"), bgo = $("#bulkgo"), bmsg = $("#bulkmsg");
+function openBulk(on){ bulk.hidden = !on; $("#bulkbtn").setAttribute("aria-expanded", String(on)); bmsg.textContent = ""; if (on) btext.focus(); }
+$("#bulkbtn").addEventListener("click", () => openBulk(bulk.hidden));
+$("#bulkcancel").addEventListener("click", () => { btext.value = ""; openBulk(false); });
+
+const WD = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"];
+// Comparações sem acento: cada letra vira a versão sem acento, mantendo as posições do texto original.
+const flat = s => [...s].map(c => c.normalize("NFD")[0]).join("").toLowerCase();
+const KEYWORDS = {
+  trabalho: /\b(reuniao|relatorio|e-?mail|cliente|chefe|projeto|apresentacao|planilha|proposta|equipe|contrato)\b/,
+  casa: /\b(limpar|lavar|mercado|compras?|feira|conta de (luz|agua|gas)|aluguel|condominio|consertar|faxina|roupa|louca)\b/,
+};
+const PRE = "(?:\\s*\\b(?:na |no |ate o |ate a |ate |pra |para o |para a |para |pro |o |a )?)";
+const DUE = [
+  [new RegExp(PRE + "depois de amanha\\b"), () => plusDays(2)],
+  [new RegExp(PRE + "hoje\\b"), () => plusDays(0)],
+  [new RegExp(PRE + "amanha\\b"), () => plusDays(1)],
+  [new RegExp(PRE + "(?:semana que vem|proxima semana)\\b"), () => { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); return ymd(d); }],
+  [new RegExp(PRE + "dia (\\d{1,2})(?:\\/(\\d{1,2}))?\\b"), m => {
+    const day = +m[1], mon = m[2] ? +m[2]-1 : null; if (day < 1 || day > 31) return null;
+    const t = new Date(); t.setHours(0,0,0,0);
+    const d = new Date(t.getFullYear(), mon ?? t.getMonth(), day);
+    if (d < t) mon == null ? d.setMonth(d.getMonth()+1) : d.setFullYear(d.getFullYear()+1);
+    return ymd(d);
+  }],
+  [new RegExp(PRE + "(?:proxim[ao] )?(domingo|segunda|terca|quarta|quinta|sexta|sabado)(?:-feira)?(?: que vem)?\\b"), m => {
+    const d = new Date(); let add = (WD.indexOf(m[1]) - d.getDay() + 7) % 7; if (add === 0) add = 7;
+    d.setDate(d.getDate() + add); return ymd(d);
+  }],
+];
+const cut = (s, m) => (s.slice(0, m.index) + s.slice(m.index + m[0].length)).replace(/\s{2,}/g," ").trim();
+function localSplit(text){
+  return text
+    .split(/\n|;|,|\.(?:\s|$)|\s+e também\s+|\s+e depois\s+|\s+v[íi]rgula\s+/i)
+    .map(s => s.replace(/^\s*(e|também|depois)\s+/i,"").trim()).filter(s => s.length > 1)
+    .map(s => {
+      let texto = s, m;
+      let importante = false;
+      while ((m = flat(texto).match(/\b(urgente|importante|prioridade|sem falta)\b[:,]?/))){ importante = true; texto = cut(texto, m); }
+      let prazo = null;
+      for (const [re, fn] of DUE){ if ((m = flat(texto).match(re))){ prazo = fn(m); if (prazo){ texto = cut(texto, m); break; } } }
+      let caderno = null;
+      const f = flat(texto);
+      for (const [id, rx] of Object.entries(KEYWORDS)) if (rx.test(f) && books.some(b => b.id === id)){ caderno = id; break; }
+      for (const b of books) if (new RegExp("\\b(no |caderno )" + flat(b.nome) + "\\b").test(f)){ caderno = b.id; break; }
+      return { texto: texto ? texto[0].toUpperCase() + texto.slice(1) : s, prazo, importante, caderno };
+    });
+}
+bgo.addEventListener("click", async () => {
+  const text = btext.value.trim();
+  if (!text){ bmsg.textContent = "Dite ou escreva pelo menos uma tarefa."; btext.focus(); return; }
+  const defBook = (view==="hoje"||view==="todas") ? books[0].id : view;
+  bgo.disabled = true; bgo.textContent = "Separando…"; bmsg.textContent = "";
+  const items = localSplit(text);
+  const clean = items.map(x => ({
+    texto: String(x?.texto||"").trim().slice(0,300),
+    prazo: /^\d{4}-\d{2}-\d{2}$/.test(String(x?.prazo||"")) ? x.prazo : (view==="hoje" ? todayStr() : null),
+    importante: !!x?.importante,
+    caderno: books.some(b => b.id === x?.caderno) ? x.caderno : defBook,
+  })).filter(x => x.texto);
+  bgo.disabled = false; bgo.textContent = "Separar em tarefas";
+  if (!clean.length){ bmsg.textContent = "Não encontrei tarefas nesse texto. Tente falar uma por vez, separando com vírgulas."; return; }
+  const ids = [];
+  for (const [i,t] of clean.entries()) ids.push(await backend.add({...t, feita:false, feitaEm:null, nota:"", criada:Date.now()+i}));
+  btext.value = ""; openBulk(false);
+  flash(`${clean.length} tarefa${clean.length>1?"s":""} adicionada${clean.length>1?"s":""}`, async () => { for (const id of ids) if (id) await backend.remove(id); });
+});
+
+// ---------- backup ----------
+function exportBackup(){
+  const data = JSON.stringify({app:"caderno-tarefas", versao:1, exportadoEm:new Date().toISOString(), books, tasks:Object.fromEntries(tasks)}, null, 2);
+  const blob = new Blob([data], {type:"application/json"});
+  const name = `cadernos-backup-${todayStr()}.json`;
+  const file = new File([blob], name, {type:"application/json"});
+  if (navigator.canShare?.({files:[file]})) { navigator.share({files:[file], title:"Backup dos cadernos"}).catch(()=>{}); return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+$("#importfile").addEventListener("change", async e => {
+  const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
+  try {
+    const j = JSON.parse(await f.text());
+    if (j.app !== "caderno-tarefas" || !j.tasks || !Array.isArray(j.books)) throw 0;
+    const before = {books, tasks:new Map(tasks)};
+    books = j.books.length ? j.books : books; tasks = new Map(Object.entries(j.tasks));
+    lsSave(); view = "todas"; render();
+    flash(`Backup restaurado: ${tasks.size} tarefas`, () => { books = before.books; tasks = before.tasks; lsSave(); render(); });
+  } catch { flash("Esse arquivo não é um backup dos cadernos."); }
+});
+
+// ---------- boot ----------
+lsLoad(); backend = localBackend; render();
+addEventListener("storage", e => { if (e.key === LS){ lsLoad(); render(); } });
+addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("/sw.js").catch(()=>{});
+})();
+</script>
+</body>
+</html>
