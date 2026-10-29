@@ -423,6 +423,11 @@ function renderBookOps(){
     for (const t of gone) await backend.remove(t.id);
     flash(`${gone.length} feita${gone.length>1?"s":""} removida${gone.length>1?"s":""}`, async () => { for (const t of gone){ const {id,...rest} = t; await backend.add(rest); } });
   }},"Limpar feitas"));
+  if (view !== "hoje" && view !== "todas") box.append(el("button",{class:"chipbtn",type:"button",onclick(){
+    const b = book(view), v = prompt("Novo nome do caderno:", b.nome)?.trim().slice(0, 60);
+    if (!v || v === b.nome) return;
+    books = books.map(x => x.id === b.id ? {...x, nome:v} : x); backend.saveBooks();
+  }},"Renomear"));
   if (view !== "hoje" && view !== "todas" && books.length > 1){
     const b = book(view), n = [...tasks.values()].filter(t => t.caderno === b.id).length;
     const armed = confirmDel === "book:"+b.id;
