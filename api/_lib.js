@@ -75,7 +75,10 @@ export function body(req) {
 export function site(req) {
   const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").split(",")[0].trim();
   const proto = String(req.headers["x-forwarded-proto"] || (host.startsWith("localhost") ? "http" : "https")).split(",")[0].trim();
-  return { origin: `${proto}://${host}`, rpID: host.replace(/:\d+$/, ""), secure: proto === "https" };
+  // RP_ID fixa o domínio das chaves-senha. Assim, trocar de endereço não perde as chaves já criadas:
+  // o novo endereço é liberado em /.well-known/webauthn (veja api/webauthn.js).
+  const rpID = (process.env.RP_ID || "").trim() || host.replace(/:\d+$/, "");
+  return { origin: `${proto}://${host}`, rpID, secure: proto === "https" };
 }
 
 function sameOrigin(req) {

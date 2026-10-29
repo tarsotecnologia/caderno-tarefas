@@ -74,9 +74,22 @@ Daqui em diante, cada `git push` na `main` publica sozinho.
 ## Endereço do site e chaves-senha
 
 A chave-senha fica presa ao endereço onde foi criada (ex.: `caderno-tarefas.vercel.app`).
-Se você mudar o domínio depois, cada pessoa precisa criar uma conta nova no endereço novo.
 Os endereços de pré-visualização do Vercel (`...-git-...vercel.app`) também são diferentes:
 use sempre o endereço de produção.
+
+### Trocar de domínio sem perder as chaves
+
+Para usar um domínio novo (ex.: `cadernos.exemplo.com`) com as chaves já criadas no antigo,
+crie no Vercel (Settings → Environment Variables, ambiente Production) e faça **Redeploy**:
+
+| Variável | Valor |
+|---|---|
+| `RP_ID` | o domínio antigo, onde as chaves foram criadas: `caderno-tarefas.vercel.app` |
+| `ORIGENS_EXTRAS` | o endereço novo, com `https://`: `https://cadernos.exemplo.com` (vários: separe por vírgula) |
+
+O domínio antigo precisa continuar abrindo o app **sem redirecionar** para o novo: o navegador lê
+`https://caderno-tarefas.vercel.app/.well-known/webauthn` para saber que o endereço novo pode usar
+as chaves. Funciona no Safari/iPadOS 18 ou mais novo e no Chrome 128 ou mais novo.
 
 ## Ao atualizar o app
 
@@ -91,6 +104,7 @@ para os aparelhos baixarem a versão nova. Ela aparece na segunda vez que o app 
 | `api/auth.js` | Criar conta, entrar, sair, adicionar aparelho |
 | `api/data.js` | Ler e salvar tarefas e cadernos da conta |
 | `api/_lib.js` | Banco de dados, sessão por cookie assinado, criação das tabelas |
+| `api/webauthn.js` | Lista de endereços extras que podem usar as chaves-senha (`/.well-known/webauthn`) |
 | `sw.js` | Faz o app abrir sem internet |
 | `manifest.webmanifest`, `icons/` | Nome, cores e ícones do app instalado |
 | `vercel.json` | Cabeçalhos para o Vercel |
