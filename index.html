@@ -164,6 +164,18 @@ li.task{min-height:var(--row)}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:12px 18px;border-radius:12px;display:flex;gap:16px;align-items:center;font-size:15px;z-index:20;box-shadow:0 8px 24px rgb(0 0 0/.2)}
 .toast button{color:var(--pen-wash);font-weight:600;text-decoration:underline}
 
+/* Lápis mascote: toque nele para uma piada sem graça */
+.lapis{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:15;width:58px;height:84px;padding:0;animation:boia 3.2s ease-in-out infinite;filter:drop-shadow(0 4px 6px rgb(0 0 0/.18))}
+.lapis svg{width:100%;height:100%;transform:rotate(14deg)}
+.lapis.mexe{animation:mexe .5s ease-in-out}
+body.locked .lapis,body.locked .balao{display:none}
+@keyframes boia{50%{transform:translateY(-5px)}}
+@keyframes mexe{20%{transform:rotate(-12deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(3deg)}}
+.balao{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 30px);bottom:calc(112px + env(safe-area-inset-bottom,0px));z-index:15;width:min(260px,calc(100vw - 60px));background:var(--paper);color:var(--ink);border:1.5px solid var(--ink-soft);border-radius:16px;padding:12px 14px 10px;font-family:var(--f-hand);font-size:22px;line-height:1.15;box-shadow:0 8px 20px rgb(0 0 0/.15)}
+.balao::after{content:"";position:absolute;right:18px;bottom:-9px;width:16px;height:16px;background:var(--paper);border-right:1.5px solid var(--ink-soft);border-bottom:1.5px solid var(--ink-soft);transform:rotate(45deg)}
+.balao .esconder{display:block;margin:8px 0 0 auto;font-family:var(--f-body);font-size:12px;color:var(--ink-soft);text-decoration:underline}
+@media (prefers-reduced-motion:reduce){.lapis,.lapis.mexe{animation:none}}
+
 @media (max-width:900px) and (min-width:761px){.app{grid-template-columns:200px minmax(0,1fr)}.dictbtn span{display:none}.add .when{max-width:110px}}
 /* Portrait iPad mini / phone: tabs become a scrolling strip */
 @media (max-width:760px){
@@ -219,6 +231,19 @@ li.task{min-height:var(--row)}
 </div>
 <div class="toast" id="toast" hidden><span id="toastmsg"></span><button id="undo" type="button">Desfazer</button></div>
 <input type="file" id="importfile" accept="application/json,.json" hidden>
+<button type="button" class="lapis" id="lapis" aria-label="Lápis: toque para ouvir uma piada" hidden>
+  <svg viewBox="0 0 60 100" aria-hidden="true">
+    <rect x="16" y="4" width="28" height="14" rx="6" fill="#e9a3a3"/>
+    <rect x="15" y="16" width="30" height="8" fill="#b9c2cc"/><path d="M15 20h30" stroke="#8e98a3" stroke-width="1.5"/>
+    <rect x="15" y="24" width="30" height="48" fill="#f2c14e"/><path d="M25 24v48M35 24v48" stroke="#dba93a" stroke-width="1.5"/>
+    <path d="M15 72h30L30 96z" fill="#efd3a8"/><path d="M25.5 89h9L30 96z" fill="#1d2a3a"/>
+    <circle cx="23.5" cy="43" r="5" fill="#fff"/><circle cx="36.5" cy="43" r="5" fill="#fff"/>
+    <circle cx="24.5" cy="44" r="2.4" fill="#1d2a3a"/><circle cx="37.5" cy="44" r="2.4" fill="#1d2a3a"/>
+    <path d="M23 55q7 6 14 0" fill="none" stroke="#1d2a3a" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="19" cy="52" r="2.6" fill="#e9a3a3" opacity=".7"/><circle cx="41" cy="52" r="2.6" fill="#e9a3a3" opacity=".7"/>
+  </svg>
+</button>
+<div class="balao" id="balao" role="status" aria-live="polite" hidden><span id="piada"></span><button type="button" class="esconder" id="esconderlapis">Esconder o lápis</button></div>
 <div class="lock" id="auth" role="dialog" aria-modal="true" aria-labelledby="authtitle">
   <div class="lockcard" id="authlogin">
     <h2 id="authtitle">Cadernos</h2>
@@ -422,6 +447,7 @@ function renderTabs(){
     el("button",{class:"chipbtn",type:"button",onclick:exportBackup},"Fazer backup"),
     el("button",{class:"chipbtn",type:"button",onclick(){ $("#importfile").click(); }},"Restaurar"),
     el("button",{class:"chipbtn",type:"button",onclick:addDevice,title:"Cadastrar a chave-senha de outro aparelho ou navegador nesta conta"},"Adicionar aparelho"),
+    $("#lapis").hidden ? el("button",{class:"chipbtn",type:"button",onclick(){ store(LAPIS_OFF, null); lapisVisivel(true); render(); }},"Mostrar lápis") : null,
     el("button",{class:"chipbtn",type:"button",onclick:logout},"Sair")));
 }
 
@@ -807,6 +833,39 @@ render();
   }
 })();
 addEventListener("online", () => pull());
+
+// ---------- lápis mascote ----------
+const PIADAS = [
+  "O que o zero disse para o oito? Que cinto bonito!",
+  "O que o pato disse para a pata? Vem quá!",
+  "Qual é o peixe que caiu do décimo andar? Aaaaaatum!",
+  "O que uma impressora disse para a outra? Essa folha é sua ou é impressão minha?",
+  "Por que o jacaré tirou o filho da escola? Porque ele réptil de ano.",
+  "Qual é a fruta que anda de trem? O kiwiiiiii!",
+  "Por que a vaca foi para o espaço? Para visitar a Via Láctea.",
+  "O que o tomate foi fazer no banco? Tirar extrato.",
+  "Qual é o animal mais antigo? A zebra, porque ainda é em preto e branco.",
+  "Qual é o contrário de volátil? Vem cá, sobrinho.",
+  "Por que a plantinha não foi atendida? Porque só tinha médico de plantão.",
+  "Por que eu não brigo com a borracha? Ela sempre apaga o que eu digo.",
+  "Por que o caderno é tão calmo? Porque ele tem muitas linhas de pensamento.",
+  "O que o lápis disse para o papel? Fica tranquilo, eu tô do seu lado. Na linha.",
+  "Sabe qual é a tarefa mais fácil? A que já está feita.",
+  "Fui apontado como o melhor lápis do app. Doeu um pouco.",
+];
+const LAPIS_OFF = "cadernos-lapis-oculto";
+let ultimaPiada = -1, balaoTimer;
+function lapisVisivel(on){ $("#lapis").hidden = !on; if (!on) $("#balao").hidden = true; }
+$("#lapis").addEventListener("click", () => {
+  let i; do i = Math.floor(Math.random() * PIADAS.length); while (i === ultimaPiada);
+  ultimaPiada = i; $("#piada").textContent = PIADAS[i]; $("#balao").hidden = false;
+  const l = $("#lapis"); l.classList.remove("mexe"); void l.offsetWidth; l.classList.add("mexe");
+  clearTimeout(balaoTimer); balaoTimer = setTimeout(() => $("#balao").hidden = true, 9000);
+});
+$("#lapis").addEventListener("animationend", e => { if (e.animationName === "mexe") e.currentTarget.classList.remove("mexe"); });
+$("#esconderlapis").addEventListener("click", () => { store(LAPIS_OFF, true); lapisVisivel(false); render(); flash("Lápis guardado. Para trazer de volta, toque em “Mostrar lápis”."); });
+addEventListener("pointerdown", e => { if (!e.target.closest("#lapis,#balao")) $("#balao").hidden = true; });
+lapisVisivel(!fetchJSON(LAPIS_OFF));
 addEventListener("visibilitychange", () => { if (!document.hidden){ render(); pull(); } });
 setInterval(() => { if (!document.hidden) pull(); }, 60000);
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("/sw.js").catch(()=>{});
