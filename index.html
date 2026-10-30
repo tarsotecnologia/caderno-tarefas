@@ -86,11 +86,20 @@ body.locked .app,body.locked .toast{visibility:hidden}
 .page::before{content:"";position:absolute;inset:0 auto 0 0;width:22px;pointer-events:none;
   background:radial-gradient(circle at 11px 50%,var(--desk) 5px,transparent 6px) 0 0/22px 34px repeat-y;opacity:.9}
 .sheet{flex:1;overflow-y:auto;padding:0 28px 120px 76px;position:relative;
-  background-image:linear-gradient(var(--margin),var(--margin)),repeating-linear-gradient(to bottom,transparent 0 calc(var(--row) - 1px),var(--rule) calc(var(--row) - 1px) var(--row));
-  background-size:2px 100%,100% 100%;background-position:58px 0,0 0;background-repeat:no-repeat,repeat;background-attachment:local}
-header.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;min-height:calc(var(--row)*2);padding-top:18px;box-sizing:border-box}
+  /* margem vermelha por cima; o topo (duas linhas) fica sem pauta para a data, como num caderno de verdade */
+  background-image:linear-gradient(var(--margin),var(--margin)),linear-gradient(var(--paper),var(--paper)),repeating-linear-gradient(to bottom,transparent 0 calc(var(--row) - 1px),var(--rule) calc(var(--row) - 1px) var(--row));
+  background-size:2px 100%,100% calc(var(--row)*2),100% 100%;background-position:58px 0,0 0,0 0;background-repeat:no-repeat,no-repeat,repeat;background-attachment:local}
+header.head{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;min-height:calc(var(--row)*3);padding-top:calc(var(--row)*2);box-sizing:border-box}
 h1{font-family:var(--f-hand);font-weight:700;font-size:44px;line-height:1;margin:0;color:var(--hc,var(--ink));text-wrap:balance}
-.date{font-family:var(--f-mono);font-size:13px;color:var(--ink-soft);padding-bottom:8px}
+.calend{position:absolute;top:16px;right:0;display:flex;flex-direction:column;align-items:center;gap:6px;--cal:#8ec5e0}
+.calend .dbox{min-width:128px;height:32px;border:1.5px solid var(--cal);border-radius:16px;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 14px;box-sizing:border-box;
+  font-family:var(--f-hand);font-weight:700;font-size:24px;line-height:1;color:var(--hc,var(--ink))}
+.calend .dbox i{font-style:normal;color:var(--cal);font-weight:600}
+.calend .wdays{display:flex;gap:4px}
+.calend .wd{display:flex;flex-direction:column;align-items:center;gap:2px;width:15px;font-family:var(--f-body);font-size:10px;font-weight:600;color:var(--ink-soft)}
+.calend .wd::before{content:"";width:12px;height:12px;border-radius:50%;background:var(--cal);opacity:.45}
+.calend .wd.hoje{color:var(--hc,var(--pen))}
+.calend .wd.hoje::before{background:var(--hc,var(--pen));opacity:1;box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--hc,var(--pen))}
 .bookops{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-bottom:6px}
 .swatches{display:flex;align-items:center;gap:6px}
 .swatch{width:28px;height:28px;border-radius:50%;background:var(--sw);border:2px solid var(--paper);box-shadow:0 0 0 1px var(--line);flex:none;position:relative;overflow:hidden}
@@ -229,7 +238,7 @@ body.locked .lapis,body.locked .balao{display:none}
   body.menu .tabs{transform:none;visibility:visible}
   body.menu .scrim{display:block;position:fixed;inset:0;z-index:39;background:rgb(10 15 20/.35)}
   .backup{margin-top:12px}
-  .sheet{padding:0 14px 120px 50px;background-position:38px 0,0 0}
+  .sheet{padding:0 14px 120px 50px;background-position:38px 0,0 0,0 0}
   .page::before{width:16px;background-size:16px 34px;background-image:radial-gradient(circle at 8px 50%,var(--desk) 4px,transparent 5px)}
   h1{font-size:36px}
   .detail{padding-left:0}
@@ -245,7 +254,8 @@ body.locked .lapis,body.locked .balao{display:none}
   <main class="page">
     <div class="sheet" id="sheet">
       <header class="head">
-        <div><div class="date" id="today"></div><h1 id="title">Hoje</h1></div>
+        <div class="calend" id="calend"></div>
+        <h1 id="title">Hoje</h1>
         <div class="bookops" id="bookops"></div>
       </header>
       <input id="busca" class="field busca" type="search" placeholder="Buscar em tarefas, anotações e checklists" aria-label="Buscar" enterkeyhint="search" autocomplete="off" hidden>
@@ -362,7 +372,16 @@ const fmtDue = s => {
   const [y,m,d] = s.split("-").map(Number); const dt = new Date(y,m-1,d);
   return dt.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}).replace(".","");
 };
-$("#today").textContent = new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
+// Data no topo da página: "dd / mm / aa" e a bolinha do dia da semana pintada (S T Q Q S S D, começa na segunda).
+function calendario(){
+  const d = new Date(), p = n => String(n).padStart(2,"0"), hoje = (d.getDay() + 6) % 7;
+  const box = $("#calend");
+  box.setAttribute("aria-label", d.toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long",year:"numeric"}));
+  box.innerHTML = `<div class="dbox" aria-hidden="true">${p(d.getDate())}<i>/</i>${p(d.getMonth()+1)}<i>/</i>${p(d.getFullYear()%100)}</div>`
+    + `<div class="wdays" aria-hidden="true">${"STQQSSD".split("").map((l,i) => `<span class="wd${i===hoje?" hoje":""}">${l}</span>`).join("")}</div>`;
+}
+calendario();
+document.addEventListener("visibilitychange", () => { if (!document.hidden) calendario(); });
 
 // ---------- state ----------
 let tasks = new Map();        // id -> task
@@ -469,7 +488,7 @@ function render(){
   renderTabs();
   const cur = {hoje:{nome:"Hoje"}, semana:{nome:"Esta semana"}, todas:{nome:"Todas as tarefas"}, busca:{nome:"Buscar"}}[view] || book(view);
   $("#title").textContent = cur.nome;
-  $("#title").style.setProperty("--hc", isBook(view) ? cur.cor : "");
+  $("header.head").style.setProperty("--hc", isBook(view) ? cur.cor : "");
   $("#busca").hidden = view !== "busca"; $("#addform").hidden = view === "busca";
   if (view === "busca") $("#bulk").hidden = true;
   renderBookOps();
